@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gerador de Etiquetas - Com Banco de Dados</title>
+<title>Etiquetas - Produção e Inspeção</title>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
@@ -10,77 +10,59 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif}
 body{background:#f4f6f9;display:flex;height:100vh;overflow:hidden}
-.sidebar{width:480px;background:#fff;border-right:1px solid #ddd;display:flex;flex-direction:column}
+.sidebar{width:520px;background:#fff;border-right:1px solid #ddd;display:flex;flex-direction:column}
 .sidebar-top{display:flex;background:#f1f3f5;border-bottom:1px solid #ddd}
-.tab-btn{flex:1;padding:12px 8px;border:none;background:transparent;cursor:pointer;font-weight:700;font-size:12px;color:#666;border-bottom:3px solid transparent}
+.tab-btn{flex:1;padding:11px 6px;border:none;background:transparent;cursor:pointer;font-weight:800;font-size:11px;color:#666;border-bottom:3px solid transparent}
 .tab-btn.ativo{background:#fff;color:#0d6efd;border-bottom-color:#0d6efd}
 .sidebar-content{flex:1;overflow-y:auto;padding:12px}
-.sidebar h2{font-size:12px;margin-bottom:8px;color:#333;border-bottom:2px solid #007bff;padding-bottom:3px;margin-top:14px;text-transform:uppercase}
-.form-group{margin-bottom:7px} .form-group label{display:block;font-size:10px;font-weight:bold;color:#555;margin-bottom:2px}
-.form-group input,.form-group select,.form-group textarea{width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;font-size:12px}
+.sidebar h2{font-size:11px;margin-bottom:8px;color:#fff;background:#0d6efd;padding:5px 8px;border-radius:4px;margin-top:14px;text-transform:uppercase}
+.sidebar h3{font-size:11px;margin:12px 0 6px;color:#333;border-left:3px solid #0d6efd;padding-left:6px}
+.form-group{margin-bottom:7px;position:relative} .form-group label{display:block;font-size:10px;font-weight:bold;color:#555;margin-bottom:2px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:7px;border:1px solid #ccc;border-radius:5px;font-size:12px}
+.form-group input:focus{border-color:#0d6efd;outline:none;box-shadow:0 0 0 2px rgba(13,110,253,.15)}
 .row-inputs{display:flex;gap:6px} .row-inputs .form-group{flex:1}
 .dados-box{background:linear-gradient(135deg,#e7f1ff,#d0e2ff);border:2px solid #0d6efd;border-radius:8px;padding:10px;margin-bottom:10px}
 .dados-box.vinculado{background:linear-gradient(135deg,#d1e7dd,#a3d9a5);border-color:#198754}
-.vinculo-aviso{background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:6px;margin-bottom:10px;font-size:10px;color:#856404}
+.vinculo-aviso{background:#d1e7dd;border:1px solid #198754;border-radius:6px;padding:7px;margin-bottom:10px;font-size:11px;color:#0f5132}
+.card-prod{background:linear-gradient(135deg,#fff,#f8f9ff);border:2px solid #0d6efd;border-radius:8px;padding:10px;margin-bottom:10px}
 .elemento-box{background:#f9f9f9;border:1px solid #e0e0e0;padding:8px;border-radius:4px;margin-bottom:8px}
-.elemento-box.vinculado{border-color:#0d6efd;background:#e7f1ff}
-.elemento-box h4{font-size:11px;color:#007bff;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
 .btn-remover{background:#dc3545;color:white;border:none;padding:2px 6px;font-size:10px;border-radius:3px;cursor:pointer}
-.btn-add{background:#17a2b8;color:white;border:none;padding:10px;width:100%;border-radius:6px;cursor:pointer;font-weight:bold;font-size:12px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-add{background:#17a2b8;color:white;border:none;padding:10px;width:100%;border-radius:6px;cursor:pointer;font-weight:bold;font-size:12px;margin-bottom:8px}
 .btn-save{background:#0d6efd;color:white;border:none;padding:9px;width:100%;border-radius:6px;cursor:pointer;font-weight:bold;font-size:12px;margin-bottom:6px}
 .btn-save.salvo{background:#198754 !important}
-.btn-db{background:#198754;color:white;border:none;padding:8px;width:100%;border-radius:6px;cursor:pointer;font-weight:bold;font-size:11px;margin-bottom:6px}
-.print-btn{background:#28a745;color:white;border:none;padding:10px;width:100%;border-radius:4px;cursor:pointer;font-weight:bold;font-size:13px;margin-top:6px}
+.btn-db{background:#198754;color:white;border:none;padding:9px;width:100%;border-radius:6px;cursor:pointer;font-weight:bold;font-size:11px;margin-bottom:6px}
+.btn-prod{background:#6f42c1;color:white;border:none;padding:10px;width:100%;border-radius:6px;cursor:pointer;font-weight:bold;font-size:12px;margin-bottom:6px}
+.print-btn{background:#28a745;color:white;border:none;padding:12px;width:100%;border-radius:6px;cursor:pointer;font-weight:bold;font-size:13px;margin-top:8px}
 .preview-area{flex:1;display:flex;justify-content:center;align-items:center;background:#e9ecef;padding:20px;overflow:auto;flex-direction:column;gap:12px}
-#etiqueta{background:#fff;border:2px solid #999;position:relative;box-shadow:0 4px 10px rgba(0,0,0,0.2);overflow:hidden;flex-shrink:0}
-.etiqueta-item-preview{position:absolute;user-select:none;touch-action:none;box-sizing:border-box;border:1px dashed #007bff;background-color:rgba(0,123,255,0.03);cursor:move;display:flex;align-items:center;justify-content:center}
-.preview-img{width:100%;height:100%;object-fit:contain;pointer-events:none}
-.preview-ean13,.preview-barcode{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;overflow:hidden}
-.barcode-font{font-family:'Libre Barcode 39',cursive;line-height:1}
-.preview-text{width:100%;height:100%;display:flex;align-items:center;overflow:hidden;pointer-events:none;padding:0 2px}
+#etiqueta{background:#fff;border:2px solid #333;position:relative;box-shadow:0 4px 12px rgba(0,0,0,0.25);overflow:hidden;flex-shrink:0}
+.etiqueta-item-preview{position:absolute;user-select:none;touch-action:none;box-sizing:border-box;border:1px dashed #007bff;background-color:rgba(0,123,255,0.04);cursor:move;display:flex;align-items:center;justify-content:center}
+.preview-text{width:100%;height:100%;display:flex;align-items:center;overflow:hidden;pointer-events:none;padding:0 3px;font-size:11px}
 .preview-linha{width:100%;height:100%;display:flex;align-items:center;justify-content:center;pointer-events:none}
 .linha-interna{background-color:#000 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.badge-vinculo{display:inline-block;background:#198754;color:white;font-size:9px;padding:2px 6px;border-radius:10px;margin-left:4px}
-/* BANCO */
 .db-item{border:1px solid #dee2e6;border-radius:6px;padding:7px;margin-bottom:6px;background:#fff;display:flex;gap:8px;align-items:center}
 .db-item:hover{background:#f8f9ff;border-color:#0d6efd}
 .db-item .db-info{flex:1;min-width:0}
-.db-item .db-codigo{font-family:monospace;font-weight:700;font-size:11px;color:#0d6efd}
+.db-item .db-codigo{font-family:monospace;font-weight:800;font-size:11px;color:#0d6efd}
 .db-item .db-desc{font-size:11px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.db-item .db-meta{font-size:9px;color:#666}
 .db-actions{display:flex;gap:3px;flex-direction:column}
-.db-actions button{padding:4px 7px;border:none;border-radius:4px;font-size:9px;cursor:pointer;font-weight:600}
+.db-actions button{padding:4px 7px;border:none;border-radius:4px;font-size:9px;cursor:pointer;font-weight:700}
 .btn-usar{background:#0d6efd;color:#fff} .btn-editar{background:#ffc107;color:#000} .btn-del{background:#dc3545;color:#fff}
-.search-box{position:sticky;top:0;background:#fff;padding-bottom:8px;z-index:2}
+.autocomplete-list{position:absolute;top:100%;left:0;right:0;background:#fff;border:2px solid #0d6efd;border-top:none;border-radius:0 0 6px 6px;max-height:160px;overflow-y:auto;z-index:999;box-shadow:0 6px 16px rgba(0,0,0,.2);display:none}
+.autocomplete-item{padding:7px 8px;font-size:11px;cursor:pointer;border-bottom:1px solid #f1f1f1;display:flex;gap:6px;align-items:center}
+.autocomplete-item:hover{background:#e7f1ff}
+.ac-cod{font-family:monospace;font-weight:800;color:#0d6efd;min-width:90px}
+.ac-desc{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status-ok{color:#198754;font-size:11px;font-weight:700} .status-warn{color:#856404;font-size:10px}
+.badge{font-size:9px;padding:2px 6px;border-radius:10px;font-weight:700}
+.badge-auto{background:#198754;color:#fff}
+.badge-prod{background:#6f42c1;color:#fff}
 @media print{
-  /* Esconde tudo */
-  body{height:auto !important;overflow:visible !important;background:white !important;display:block !important;margin:0 !important;padding:0 !important}
-  .sidebar, #infoAutoPrint, .no-print, .vinculo-aviso, .autocomplete-list{display:none !important}
-  .preview-area{background:white !important;padding:0 !important;margin:0 !important;display:flex !important;justify-content:flex-start !important;align-items:flex-start !important;overflow:visible !important;height:auto !important}
-  #etiqueta{
-    border:none !important;
-    box-shadow:none !important;
-    margin:0 !important;
-    position:relative !important;
-    left:0 !important;
-    top:0 !important;
-    -webkit-print-color-adjust:exact !important;
-    print-color-adjust:exact !important;
-  }
-  .etiqueta-item-preview{
-    border:none !important;
-    background:transparent !important;
-    -webkit-print-color-adjust:exact !important;
-    print-color-adjust:exact !important;
-  }
-  .linha-interna, .preview-img, svg, canvas{
-    -webkit-print-color-adjust:exact !important;
-    print-color-adjust:exact !important;
-  }
-  @page{
-    margin:0;
-    size:auto;
-  }
+  body{margin:0 !important;padding:0 !important;background:white !important;display:block !important;height:auto !important;overflow:visible !important}
+  .sidebar, #infoAutoPrint, .no-print, .autocomplete-list, .vinculo-aviso{display:none !important}
+  .preview-area{background:white !important;padding:0 !important;margin:0 !important;display:block !important;overflow:visible !important;height:auto !important}
+  #etiqueta{border:none !important;box-shadow:none !important;margin:0 !important;position:relative !important;-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
+  .etiqueta-item-preview{border:none !important;background:transparent !important;-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
+  @page{margin:0;size:auto}
 }
 </style>
 </head>
@@ -88,114 +70,150 @@ body{background:#f4f6f9;display:flex;height:100vh;overflow:hidden}
 
 <div class="sidebar">
   <div class="sidebar-top">
-    <button class="tab-btn ativo" id="tabBanco" onclick="trocarAba('banco')">📦 BANCO DE DADOS</button>
+    <button class="tab-btn ativo" id="tabBanco" onclick="trocarAba('banco')">📦 BANCO</button>
+    <button class="tab-btn" id="tabProducao" onclick="trocarAba('producao')">🏭 PRODUÇÃO</button>
     <button class="tab-btn" id="tabEditor" onclick="trocarAba('editor')">🎨 EDITOR</button>
   </div>
-  <div class="sidebar-content" id="conteudoBanco">
-    <div class="search-box">
-      <div style="display:flex;gap:6px;margin-bottom:8px">
-        <span style="font-size:11px;font-weight:700" id="contadorDB">0 produtos</span>
-        <span style="margin-left:auto;font-size:10px;color:#198754" id="statusDB"></span>
-      </div>
-      <div class="form-group"><input id="buscaDB" placeholder="🔍 Buscar por código, descrição ou EAN..." oninput="renderizarDB()"></div>
-    </div>
 
-    <h2>➕ Adicionar / Editar Produto</h2>
+  <!-- BANCO -->
+  <div class="sidebar-content" id="conteudoBanco">
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+      <span style="font-size:11px;font-weight:800" id="contadorDB">0 produtos</span>
+      <span id="statusDB"></span>
+    </div>
+    <div class="form-group"><input id="buscaDB" placeholder="🔍 Buscar código ou descrição..." oninput="renderizarDB()"></div>
+
+    <h2>➕ CADASTRO - CÓDIGO E DESCRIÇÃO</h2>
     <input type="hidden" id="db_edit_id">
-    <div class="row-inputs">
-      <div class="form-group"><label>Código *</label><input id="db_codigo" placeholder="ELG-PCB-8821"></div>
-      <div class="form-group"><label>EAN13</label><input id="db_ean" placeholder="7891234560011"></div>
-    </div>
-    <div class="form-group"><label>Descrição *</label><input id="db_desc" placeholder="Placa Eletrônica Elgin 48K BTU"></div>
-    <div class="row-inputs">
-      <div class="form-group"><label>Nº Série</label><input id="db_serie" placeholder="SN88210045"></div>
-      <div class="form-group"><label>Modelo / PN</label><input id="db_modelo" placeholder="ELG-INV-48K-V3"></div>
-    </div>
-    <div class="row-inputs">
-      <div class="form-group"><label>Cliente</label><input id="db_cliente" placeholder="Elgin"></div>
-      <div class="form-group"><label>Lote</label><input id="db_lote" placeholder="LT2024-09-A"></div>
-    </div>
-    <div class="row-inputs">
-      <div class="form-group"><label>Data</label><input id="db_data" type="date"></div>
-      <div class="form-group"><label>Qtd Etiquetas</label><input id="db_qtd" type="number" value="1" min="1"></div>
-    </div>
-    <div class="form-group"><label>Observação</label><input id="db_obs" placeholder="Revisão, firmware..."></div>
-    <button class="btn-db" onclick="salvarProdutoDB()">💾 Salvar Produto no Banco</button>
-    <button class="btn-add" style="background:#6c757d" onclick="limparFormDB()">Limpar Formulário</button>
+    <div class="form-group"><label>Código *</label><input id="db_codigo" placeholder="Ex: ELG-PCB-8821"></div>
+    <div class="form-group"><label>Descrição *</label><textarea id="db_desc" rows="3" placeholder="Descrição completa do produto"></textarea></div>
+    <button class="btn-db" onclick="salvarProdutoDB()">💾 Salvar no Banco</button>
+    <button class="btn-add" style="background:#6c757d" onclick="limparFormDB()">Limpar</button>
 
     <div style="display:flex;gap:6px;margin:10px 0">
-      <button class="btn-save" style="background:#6f42c1" onclick="exportarDB()">📤 Exportar JSON</button>
-      <button class="btn-save" style="background:#fd7e14" onclick="document.getElementById('importDB').click()">📥 Importar</button>
+      <button class="btn-save" style="background:#6f42c1" onclick="exportarDB()">📤 Exportar</button>
+      <button class="btn-save" style="background:#fd7e14" onclick="document.getElementById('importDB').click()">📥 Importar CSV/JSON</button>
       <input type="file" id="importDB" accept=".json,.csv" style="display:none" onchange="importarDB(event)">
     </div>
 
-    <h2>📋 Produtos Cadastrados</h2>
+    <h2>📋 PRODUTOS</h2>
     <div id="listaDB"></div>
-
-    <button class="print-btn" onclick="abrirLote()" style="margin-top:12px">🖨️ Gerar Etiquetas em Lote</button>
-    <div style="font-size:10px;color:#666;margin-top:6px">Selecione vários produtos no modal de lote para imprimir grade 2x5 em A4</div>
   </div>
 
-  <div class="sidebar-content" id="conteudoEditor" style="display:none">
-    <div class="vinculo-aviso" id="avisoVinculo" style="display:none">🔗 Produto vinculado do banco. <span id="vinculoNome"></span></div>
+  <!-- PRODUÇÃO - NOVA TELA -->
+  <div class="sidebar-content" id="conteudoProducao" style="display:none">
+    <div class="vinculo-aviso" id="avisoProducao" style="display:none">✅ Produto vinculado: <b id="prodVinculadoTxt"></b></div>
 
-    <h2>📐 Dimensões da Etiqueta</h2>
-    <div class="row-inputs">
-      <div class="form-group"><label>Largura (mm)</label><input type="number" id="inputWidth" value="100" onchange="atualizarDimensoes()"></div>
-      <div class="form-group"><label>Altura (mm)</label><input type="number" id="inputHeight" value="75" onchange="atualizarDimensoes()"></div>
-    </div>
+    <h2>🏭 EDIÇÃO DE PRODUÇÃO - PREENCHA E PUXA NA ETIQUETA</h2>
 
-    <div class="dados-box" id="dadosBox">
-      <h2 style="margin-top:0;border:none">📦 Dados da Etiqueta Atual</h2>
-      <div class="form-group"><label>Código Produto</label><input id="inputCodProduto" oninput="onDadosChange()"></div>
-      <div class="form-group"><label>Descrição</label><input id="inputDescricao" oninput="onDadosChange()"></div>
-      <div class="row-inputs">
-        <div class="form-group"><label>EAN13</label><input id="inputEAN13" oninput="onDadosChange()"></div>
-        <div class="form-group"><label>Nº Série</label><input id="inputSerie" oninput="onDadosChange()"></div>
+    <div class="card-prod">
+      <h3>📦 Produto</h3>
+      <div class="form-group" style="position:relative">
+        <label>Código do Produto * <span class="badge badge-auto">AUTO DESCRIÇÃO</span></label>
+        <input id="prod_codigo" placeholder="Digite ou selecione o código - descrição preenche auto" oninput="onProdCodigo(this.value)" onfocus="mostrarAutoProd()" onblur="setTimeout(esconderAutoProd,200)" autocomplete="off">
+        <div id="autoProd" class="autocomplete-list"></div>
+        <div id="statusProdCodigo" style="margin-top:4px"></div>
       </div>
-      <div class="form-group"><label>Data</label><input id="inputData" type="date" oninput="onDadosChange()"></div>
-      <button class="btn-db" id="btnAtualizarBanco" style="display:none" onclick="atualizarNoBanco()">⬆️ Atualizar este produto no Banco</button>
+      <div class="form-group"><label>Descrição (puxada do banco)</label><input id="prod_descricao" readonly style="background:#f1f3f5;font-weight:600"></div>
     </div>
 
-    <h2>🧩 Elementos da Etiqueta (mesmos do original)</h2>
+    <div class="card-prod" style="border-color:#6f42c1">
+      <h3>📋 Ordem e Quantidade</h3>
+      <div class="row-inputs">
+        <div class="form-group"><label>Número da Ordem *</label><input id="prod_ordem" placeholder="Ex: OP-2024-1542" oninput="onProdChange()"></div>
+        <div class="form-group"><label>QTD *</label><input id="prod_qtd" type="number" min="1" value="1" placeholder="1" oninput="onProdChange()"></div>
+      </div>
+    </div>
+
+    <div class="card-prod" style="border-color:#fd7e14">
+      <h3>🔧 Produção</h3>
+      <div class="row-inputs">
+        <div class="form-group"><label>Data Produção *</label><input id="prod_data_prod" type="date" oninput="onProdChange()"></div>
+        <div class="form-group"><label>Hora Produção *</label><input id="prod_hora_prod" type="time" oninput="onProdChange()"></div>
+      </div>
+      <div class="form-group"><label>Responsável Produção *</label><input id="prod_resp_prod" placeholder="Nome do operador" oninput="onProdChange()" list="listaOperadores"></div>
+    </div>
+
+    <div class="card-prod" style="border-color:#198754">
+      <h3>✅ Inspeção</h3>
+      <div class="row-inputs">
+        <div class="form-group"><label>Data Inspeção</label><input id="prod_data_insp" type="date" oninput="onProdChange()"></div>
+        <div class="form-group"><label>Hora Inspeção</label><input id="prod_hora_insp" type="time" oninput="onProdChange()"></div>
+      </div>
+      <div class="form-group"><label>Responsável Inspeção</label><input id="prod_resp_insp" placeholder="Nome do inspetor" oninput="onProdChange()" list="listaInspetores"></div>
+    </div>
+
+    <datalist id="listaOperadores">
+      <option value="João Silva"><option value="Maria Santos"><option value="Carlos Oliveira"><option value="Ana Pereira">
+    </datalist>
+    <datalist id="listaInspetores">
+      <option value="Qualidade - Turno A"><option value="Qualidade - Turno B"><option value="José Qualidade"><option value="Patrícia QA">
+    </datalist>
+
+    <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:8px;margin:10px 0;font-size:10px">
+      <b>Variáveis disponíveis no Editor:</b><br>
+      <code style="font-size:9px;line-height:1.6">
+      {codigo} {descricao} {ordem} {qtd}<br>
+      {data_producao} {hora_producao} {resp_producao}<br>
+      {data_inspecao} {hora_inspecao} {resp_inspecao}<br>
+      {data} {hora} = data/hora atual
+      </code>
+    </div>
+
+    <button class="btn-prod" onclick="preencherAgora()">⚡ Preencher Data/Hora Agora</button>
+    <button class="btn-db" onclick="salvarOrdem()">💾 Salvar Ordem no Histórico</button>
+    <button class="print-btn" onclick="window.print()">🖨️ IMPRIMIR ETIQUETA</button>
+
+    <h2>📜 Histórico de Ordens</h2>
+    <div id="listaOrdens" style="max-height:180px;overflow:auto"></div>
+  </div>
+
+  <!-- EDITOR -->
+  <div class="sidebar-content" id="conteudoEditor" style="display:none">
+    <div class="vinculo-aviso" id="avisoVinculo" style="display:none">✅ Vinculado: <b id="vinculoNome"></b></div>
+
+    <h2>📐 Dimensões</h2>
+    <div class="row-inputs">
+      <div class="form-group"><label>Largura mm</label><input type="number" id="inputWidth" value="100" onchange="atualizarDimensoes()"></div>
+      <div class="form-group"><label>Altura mm</label><input type="number" id="inputHeight" value="70" onchange="atualizarDimensoes()"></div>
+    </div>
+
+    <h2>🧩 Elementos - Arraste na Etiqueta</h2>
     <div id="listaElementos"></div>
 
     <div class="row-inputs">
-      <select id="selectTipo" class="form-group" style="flex:1;padding:8px;border-radius:6px;border:1px solid #ccc">
+      <select id="selectTipo" style="flex:1;padding:8px;border-radius:6px;border:1px solid #ccc;font-size:11px">
         <option value="texto">Texto Livre</option>
         <option value="codigo">Código Produto</option>
         <option value="descricao">Descrição</option>
-        <option value="ean13">EAN-13 (barras)</option>
-        <option value="code128">CODE-128 (barras)</option>
+        <option value="ordem">Nº Ordem</option>
+        <option value="qtd">QTD</option>
+        <option value="data_producao">Data Produção</option>
+        <option value="hora_producao">Hora Produção</option>
+        <option value="resp_producao">Resp. Produção</option>
+        <option value="data_inspecao">Data Inspeção</option>
+        <option value="hora_inspecao">Hora Inspeção</option>
+        <option value="resp_inspecao">Resp. Inspeção</option>
+        <option value="ean13">EAN-13</option>
+        <option value="code128">CODE-128</option>
         <option value="qrcode">QR Code</option>
-        <option value="serie">Nº Série</option>
-        <option value="data">Data</option>
-        <option value="linha">Linha Divisória</option>
-        <option value="imagem">Imagem / Logo</option>
+        <option value="linha">Linha</option>
+        <option value="imagem">Logo</option>
       </select>
-      <button class="btn-add" style="flex:1" onclick="adicionarElemento()">+ Adicionar</button>
+      <button class="btn-add" style="flex:1" onclick="adicionarElemento()">+ Add</button>
     </div>
 
     <button class="btn-save" id="btnSalvar" onclick="salvarTudo()">💾 Salvar Layout</button>
-    <div style="display:flex;gap:6px">
-      <button class="btn-save" style="background:#6c757d" onclick="exportarConfig()">Exportar Layout</button>
-      <button class="btn-save" style="background:#6c757d" onclick="document.getElementById('importLayout').click()">Importar Layout</button>
-      <input type="file" id="importLayout" accept=".json" style="display:none" onchange="importarConfig(event)">
-    </div>
     <div id="statusSave" style="font-size:10px;color:#666;margin-top:4px"></div>
-
-    <button class="print-btn" onclick="window.print()">🖨️ IMPRIMIR ETIQUETA ATUAL</button>
+    <button class="print-btn" onclick="window.print()">🖨️ IMPRIMIR SOMENTE ETIQUETA</button>
   </div>
 </div>
 
 <div class="preview-area">
   <div id="etiqueta"></div>
-  <div id="infoAutoPrint" style="font-size:11px;color:#666;background:#fff;padding:6px 10px;border-radius:6px;border:1px solid #ddd">💡 Arraste e redimensione os elementos. Dê duplo clique para editar texto livre.</div>
-  <div id="areaLote" style="display:none;background:#fff;padding:12px;border-radius:8px;width:100%;max-width:800px">
-    <h3 style="font-size:13px;margin-bottom:8px">Lote selecionado - Preview A4 (2 colunas)</h3>
-    <div id="gridLote" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
-    <button class="print-btn" onclick="imprimirLote()">🖨️ Imprimir Lote</button>
-    <button class="btn-add" style="background:#6c757d" onclick="fecharLote()">Fechar Lote</button>
+  <div id="infoAutoPrint" style="font-size:11px;color:#444;background:#fff;padding:8px 12px;border-radius:6px;border:1px solid #ddd;max-width:420px;text-align:center">
+    💡 <b>TELA PRODUÇÃO:</b> Digite o código → descrição puxa do banco → preencha Ordem/QTD/Datas/Responsáveis → etiqueta atualiza automático.<br>
+    Use <b>{ordem} {qtd} {data_producao} {resp_producao} {data_inspecao} {resp_inspecao}</b> nos textos livres.
   </div>
 </div>
 
@@ -204,202 +222,247 @@ body{background:#f4f6f9;display:flex;height:100vh;overflow:hidden}
 <script>
 const DB_KEY='etiquetas_db_v2';
 const LAYOUT_KEY='etiqueta_layout_v2';
+const ORDEM_KEY='etiquetas_ordens_v1';
 let dbProdutos = [];
+let historicoOrdens = [];
 let produtoVinculadoId = null;
-let loteSelecionados = [];
 
-let dadosEtiqueta = {codigo:'ELG-PCB-8821', descricao:'Placa Eletrônica Elgin 48K BTU Inversora', ean13:'7891234560011', serie:'SN88210045', data: new Date().toISOString().slice(0,10)};
+let dadosEtiqueta = {
+  codigo:'ELG-PCB-8821',
+  descricao:'Placa Eletrônica Elgin 48K BTU Inversora',
+  ordem:'OP-2024-001',
+  qtd:'1',
+  data_producao: new Date().toISOString().slice(0,10),
+  hora_producao: new Date().toTimeString().slice(0,5),
+  resp_producao:'',
+  data_inspecao: new Date().toISOString().slice(0,10),
+  hora_inspecao: new Date().toTimeString().slice(0,5),
+  resp_inspecao:'',
+  ean13:'',
+  serie:''
+};
+
 let elementos = [];
-let idContador = 100;
+let idContador = 200;
 let elementoLogoTemp = null;
 
-// --- BANCO DE DADOS ---
+// BANCO
 function carregarDB(){
   try{
     const raw = localStorage.getItem(DB_KEY);
-    if(raw){ dbProdutos = JSON.parse(raw); }
+    if(raw){ dbProdutos = JSON.parse(raw).map(p=>({id:p.id||Date.now().toString(), codigo:(p.codigo||'').trim(), descricao:(p.descricao||'').trim()})).filter(p=>p.codigo); }
     if(dbProdutos.length===0){
-      dbProdutos = [
-        {id:'1', codigo:'ELG-PCB-8821', descricao:'Placa Eletrônica Elgin 48K BTU Inversora', ean:'7891234560011', serie:'SN88210045', modelo:'ELG-INV-48K-V3', cliente:'Elgin Distribuidora', lote:'LT2024-09-A', data:new Date().toISOString().slice(0,10), obs:'Revisão 3.2', qtd:1},
-        {id:'2', codigo:'MOT-WEG-15CV', descricao:'Motor WEG W22 15CV 4P 220/380V', ean:'7891234560028', serie:'WEG15-99812', modelo:'W22-15CV-4P', cliente:'Metalúrgica São João', lote:'LT2024-11-B', data:'2024-11-12', obs:'Com freio', qtd:1},
-        {id:'3', codigo:'INV-CFW500-A', descricao:'Inversor CFW500 5CV', ean:'7891234560035', serie:'CFW500-44501', modelo:'CFW500-05P', cliente:'Automação Industrial', lote:'LT2024-10-C', data:'2024-10-22', obs:'Firmware 2.11', qtd:1},
-        {id:'4', codigo:'PLC-CLP-1200', descricao:'CLP Siemens S7-1200 CPU 1214C', ean:'7891234560042', serie:'S71200-77123', modelo:'6ES7214-1AG40', cliente:'Engetron', lote:'LT2024-08-D', data:'2024-08-30', obs:'Com cartão 4GB', qtd:1},
-        {id:'5', codigo:'SNS-PT100-AL', descricao:'Sensor PT100 3 fios 150mm', ean:'7891234560059', serie:'PT100-22901', modelo:'PT100-AL-150', cliente:'Frigorífico Central', lote:'LT2024-11-E', data:'2024-11-18', obs:'Cabo silicone 2m', qtd:1},
-        {id:'6', codigo:'FON-24V-10A', descricao:'Fonte Chaveada 24V 10A Trilho DIN', ean:'7891234560066', serie:'FON24-10119', modelo:'DR-240-24', cliente:'Painéis BH', lote:'LT2024-09-F', data:'2024-09-05', obs:'Garantia 2 anos', qtd:1},
+      dbProdutos=[
+        {id:'1',codigo:'ELG-PCB-8821',descricao:'Placa Eletrônica Elgin 48K BTU Inversora'},
+        {id:'2',codigo:'MOT-WEG-15CV',descricao:'Motor WEG W22 15CV 4P 220/380V'},
+        {id:'3',codigo:'INV-CFW500-A',descricao:'Inversor CFW500 5CV'},
+        {id:'4',codigo:'PLC-CLP-1200',descricao:'CLP Siemens S7-1200 CPU 1214C'},
+        {id:'5',codigo:'SNS-PT100-AL',descricao:'Sensor PT100 3 fios 150mm'},
+        {id:'6',codigo:'FON-24V-10A',descricao:'Fonte Chaveada 24V 10A Trilho DIN'},
       ];
       salvarDB();
     }
-  }catch(e){ dbProdutos=[]; }
+  }catch(e){dbProdutos=[]}
+  try{
+    const ro = localStorage.getItem(ORDEM_KEY);
+    if(ro) historicoOrdens = JSON.parse(ro);
+  }catch(e){historicoOrdens=[]}
 }
-function salvarDB(){ localStorage.setItem(DB_KEY, JSON.stringify(dbProdutos)); document.getElementById('contadorDB').innerText = dbProdutos.length+' produtos'; }
+function salvarDB(){ localStorage.setItem(DB_KEY, JSON.stringify(dbProdutos)); const c=document.getElementById('contadorDB'); if(c) c.innerText=dbProdutos.length+' produtos'; }
 function renderizarDB(){
-  const busca = (document.getElementById('buscaDB').value||'').toLowerCase();
-  const lista = document.getElementById('listaDB');
-  const filtrados = dbProdutos.filter(p=> !busca || (p.codigo+' '+p.descricao+' '+p.ean+' '+(p.serie||'')).toLowerCase().includes(busca));
-  lista.innerHTML = filtrados.map(p=> `
-    <div class="db-item">
-      <div class="db-info">
-        <div class="db-codigo">${p.codigo} ${p.qtd>1?'<span style="background:#ffc107;color:#000;padding:1px 4px;border-radius:3px;font-size:9px">x'+p.qtd+'</span>':''}</div>
-        <div class="db-desc">${p.descricao}</div>
-        <div class="db-meta">EAN: ${p.ean||'-'} • Série: ${p.serie||'-'} • ${p.modelo||''}</div>
-      </div>
+  const busca=(document.getElementById('buscaDB').value||'').toLowerCase();
+  const lista=document.getElementById('listaDB');
+  if(!lista) return;
+  const filtrados=dbProdutos.filter(p=>!busca||(p.codigo+' '+p.descricao).toLowerCase().includes(busca));
+  lista.innerHTML=filtrados.map(p=>`
+    <div class="db-item ${produtoVinculadoId===p.id?'vinculado':''}">
+      <div class="db-info"><div class="db-codigo">${p.codigo}</div><div class="db-desc">${p.descricao}</div></div>
       <div class="db-actions">
         <button class="btn-usar" onclick="usarProduto('${p.id}')">USAR</button>
-        <button class="btn-editar" onclick="editarProduto('${p.id}')">EDITAR</button>
+        <button class="btn-editar" onclick="editarProduto('${p.id}')">EDIT</button>
         <button class="btn-del" onclick="excluirProduto('${p.id}')">X</button>
       </div>
-    </div>
-  `).join('') || '<div style="font-size:11px;color:#888;padding:10px;text-align:center">Nenhum produto encontrado</div>';
-  document.getElementById('contadorDB').innerText = filtrados.length+' / '+dbProdutos.length+' produtos';
+    </div>`).join('')||'<div style="font-size:11px;color:#888;padding:10px;text-align:center">Nenhum produto</div>';
+  const cont=document.getElementById('contadorDB'); if(cont) cont.innerText=filtrados.length+' / '+dbProdutos.length+' produtos';
 }
-function limparFormDB(){
-  document.getElementById('db_edit_id').value='';
-  ['db_codigo','db_ean','db_desc','db_serie','db_modelo','db_cliente','db_lote','db_obs'].forEach(id=> document.getElementById(id).value='');
-  document.getElementById('db_data').value = new Date().toISOString().slice(0,10);
-  document.getElementById('db_qtd').value=1;
-}
+function limparFormDB(){ document.getElementById('db_edit_id').value=''; document.getElementById('db_codigo').value=''; document.getElementById('db_desc').value=''; }
 function salvarProdutoDB(){
-  const id = document.getElementById('db_edit_id').value || Date.now().toString();
-  const codigo = document.getElementById('db_codigo').value.trim();
-  const desc = document.getElementById('db_desc').value.trim();
-  if(!codigo || !desc){ alert('Código e Descrição são obrigatórios'); return; }
-  const prod = {
-    id,
-    codigo,
-    ean: document.getElementById('db_ean').value.trim(),
-    descricao: desc,
-    serie: document.getElementById('db_serie').value.trim(),
-    modelo: document.getElementById('db_modelo').value.trim(),
-    cliente: document.getElementById('db_cliente').value.trim(),
-    lote: document.getElementById('db_lote').value.trim(),
-    data: document.getElementById('db_data').value,
-    obs: document.getElementById('db_obs').value.trim(),
-    qtd: parseInt(document.getElementById('db_qtd').value)||1
-  };
-  const idx = dbProdutos.findIndex(p=>p.id===id);
+  const id=document.getElementById('db_edit_id').value||Date.now().toString();
+  const codigo=document.getElementById('db_codigo').value.trim();
+  const desc=document.getElementById('db_desc').value.trim();
+  if(!codigo||!desc){alert('Código e Descrição obrigatórios');return;}
+  const prod={id,codigo,descricao:desc};
+  const idx=dbProdutos.findIndex(p=>p.id===id);
   if(idx>=0) dbProdutos[idx]=prod; else dbProdutos.unshift(prod);
   salvarDB(); renderizarDB(); limparFormDB();
-  document.getElementById('statusDB').innerText='✅ Salvo!';
-  setTimeout(()=>document.getElementById('statusDB').innerText='',2000);
+  document.getElementById('statusDB').innerHTML='<span class="status-ok">✅ Salvo!</span>'; setTimeout(()=>{document.getElementById('statusDB').innerText='';},2000);
 }
-function editarProduto(id){
-  const p = dbProdutos.find(x=>x.id===id); if(!p) return;
-  document.getElementById('db_edit_id').value=p.id;
-  document.getElementById('db_codigo').value=p.codigo;
-  document.getElementById('db_ean').value=p.ean;
-  document.getElementById('db_desc').value=p.descricao;
-  document.getElementById('db_serie').value=p.serie;
-  document.getElementById('db_modelo').value=p.modelo;
-  document.getElementById('db_cliente').value=p.cliente;
-  document.getElementById('db_lote').value=p.lote;
-  document.getElementById('db_data').value=p.data;
-  document.getElementById('db_obs').value=p.obs;
-  document.getElementById('db_qtd').value=p.qtd||1;
-  window.scrollTo(0,0);
-}
-function excluirProduto(id){ if(confirm('Excluir produto?')){ dbProdutos=dbProdutos.filter(p=>p.id!==id); salvarDB(); renderizarDB(); } }
+function editarProduto(id){ const p=dbProdutos.find(x=>x.id===id); if(!p)return; document.getElementById('db_edit_id').value=p.id; document.getElementById('db_codigo').value=p.codigo; document.getElementById('db_desc').value=p.descricao; }
+function excluirProduto(id){ if(confirm('Excluir?')){ dbProdutos=dbProdutos.filter(p=>p.id!==id); salvarDB(); renderizarDB(); } }
 function usarProduto(id){
-  const p = dbProdutos.find(x=>x.id===id); if(!p) return;
-  produtoVinculadoId = id;
-  dadosEtiqueta = {codigo:p.codigo, descricao:p.descricao, ean13:p.ean, serie:p.serie, data:p.data, lote:p.lote, modelo:p.modelo, cliente:p.cliente};
-  document.getElementById('inputCodProduto').value=p.codigo;
-  document.getElementById('inputDescricao').value=p.descricao;
-  document.getElementById('inputEAN13').value=p.ean;
-  document.getElementById('inputSerie').value=p.serie;
-  document.getElementById('inputData').value=p.data;
-  document.getElementById('dadosBox').classList.add('vinculado');
+  const p=dbProdutos.find(x=>x.id===id); if(!p)return;
+  produtoVinculadoId=p.id;
+  dadosEtiqueta.codigo=p.codigo;
+  dadosEtiqueta.descricao=p.descricao;
+  // preenche tela produção também
+  document.getElementById('prod_codigo').value=p.codigo;
+  document.getElementById('prod_descricao').value=p.descricao;
+  document.getElementById('avisoProducao').style.display='block';
+  document.getElementById('prodVinculadoTxt').innerText=p.codigo+' - '+p.descricao;
   document.getElementById('avisoVinculo').style.display='block';
-  document.getElementById('vinculoNome').innerText = p.codigo+' - '+p.descricao;
-  document.getElementById('btnAtualizarBanco').style.display='block';
-  trocarAba('editor');
-  renderizarTudo();
+  document.getElementById('vinculoNome').innerText=p.codigo;
+  trocarAba('producao');
+  renderizarTudo(); renderizarDB();
 }
-function atualizarNoBanco(){
-  if(!produtoVinculadoId) return;
-  const idx = dbProdutos.findIndex(p=>p.id===produtoVinculadoId);
-  if(idx>=0){
-    dbProdutos[idx].codigo = document.getElementById('inputCodProduto').value;
-    dbProdutos[idx].descricao = document.getElementById('inputDescricao').value;
-    dbProdutos[idx].ean = document.getElementById('inputEAN13').value;
-    dbProdutos[idx].serie = document.getElementById('inputSerie').value;
-    dbProdutos[idx].data = document.getElementById('inputData').value;
-    salvarDB(); renderizarDB();
-    alert('Banco atualizado!');
-  }
-}
-function exportarDB(){
-  const blob = new Blob([JSON.stringify(dbProdutos,null,2)],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='banco_etiquetas_'+new Date().toISOString().slice(0,10)+'.json'; a.click();
-}
+function exportarDB(){ const blob=new Blob([JSON.stringify(dbProdutos,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='banco.json'; a.click(); }
 function importarDB(e){
-  const file=e.target.files[0]; if(!file) return;
+  const file=e.target.files[0]; if(!file)return;
   const reader=new FileReader();
   reader.onload=ev=>{
     try{
-      let dados;
+      let dados=[];
       if(file.name.endsWith('.csv')){
-        const linhas = ev.target.result.split('\n').filter(l=>l.trim());
-        dados = linhas.slice(1).map((l,i)=>{ const [codigo,descricao,ean,serie]=l.split(','); return {id:Date.now()+i+'', codigo:(codigo||'').trim(), descricao:(descricao||'').trim(), ean:(ean||'').trim(), serie:(serie||'').trim(), modelo:'', cliente:'', lote:'', data:new Date().toISOString().slice(0,10), obs:'import csv', qtd:1}; });
-      } else { dados = JSON.parse(ev.target.result); }
-      if(Array.isArray(dados)){ dbProdutos = dados.concat(dbProdutos); salvarDB(); renderizarDB(); alert(dados.length+' produtos importados'); }
-    }catch(err){ alert('Erro ao importar: '+err.message); }
-  };
-  if(file.name.endsWith('.csv')) reader.readAsText(file); else reader.readAsText(file);
-  e.target.value='';
+        const linhas=ev.target.result.split(/\r?\n/).filter(l=>l.trim());
+        const start=linhas[0].toLowerCase().includes('codigo')?1:0;
+        dados=linhas.slice(start).map((l,i)=>{ const parts=l.split(';').length>1?l.split(';'):l.split(','); return {id:Date.now()+i+'',codigo:(parts[0]||'').trim().replace(/^"|"$/g,''),descricao:parts.slice(1).join(',').trim().replace(/^"|"$/g,'')}; }).filter(p=>p.codigo);
+      }else{ const raw=JSON.parse(ev.target.result); const arr=Array.isArray(raw)?raw:[raw]; dados=arr.map(p=>({id:p.id||Date.now().toString()+Math.random(),codigo:(p.codigo||'').trim(),descricao:(p.descricao||'').trim()})).filter(p=>p.codigo); }
+      dbProdutos=dados.concat(dbProdutos); salvarDB(); renderizarDB(); alert(dados.length+' importados');
+    }catch(err){alert('Erro:'+err.message);}
+  }; reader.readAsText(file); e.target.value='';
 }
 
-// --- EDITOR (elementos originais) ---
-function trocarAba(aba){
-  document.getElementById('conteudoBanco').style.display = aba==='banco'?'block':'none';
-  document.getElementById('conteudoEditor').style.display = aba==='editor'?'block':'none';
-  document.getElementById('tabBanco').classList.toggle('ativo', aba==='banco');
-  document.getElementById('tabEditor').classList.toggle('ativo', aba==='editor');
+// PRODUÇÃO - NOVA TELA
+function onProdCodigo(valor){
+  const codigo=valor.trim();
+  dadosEtiqueta.codigo=codigo;
+  if(!codigo){
+    document.getElementById('statusProdCodigo').innerHTML='';
+    document.getElementById('prod_descricao').value='';
+    document.getElementById('autoProd').style.display='none';
+    dadosEtiqueta.descricao='';
+    produtoVinculadoId=null;
+    document.getElementById('avisoProducao').style.display='none';
+    document.getElementById('avisoVinculo').style.display='none';
+    renderizarTudo(); return;
+  }
+  const exato=dbProdutos.find(p=>p.codigo.toUpperCase()===codigo.toUpperCase());
+  if(exato){
+    dadosEtiqueta.descricao=exato.descricao;
+    document.getElementById('prod_descricao').value=exato.descricao;
+    produtoVinculadoId=exato.id;
+    document.getElementById('avisoProducao').style.display='block';
+    document.getElementById('prodVinculadoTxt').innerText=exato.codigo+' - '+exato.descricao;
+    document.getElementById('avisoVinculo').style.display='block';
+    document.getElementById('vinculoNome').innerText=exato.codigo;
+    document.getElementById('statusProdCodigo').innerHTML='<span class="status-ok">✅ Puxado do banco - descrição preenchida</span>';
+    document.getElementById('autoProd').style.display='none';
+    renderizarTudo(); renderizarDB(); return;
+  }
+  // parcial
+  const parciais=dbProdutos.filter(p=>p.codigo.toUpperCase().includes(codigo.toUpperCase())||p.descricao.toUpperCase().includes(codigo.toUpperCase())).slice(0,6);
+  if(parciais.length>0){
+    document.getElementById('autoProd').innerHTML=parciais.map(p=>`<div class="autocomplete-item" onclick="selecionarProd('${p.id}')"><span class="ac-cod">${p.codigo}</span><span class="ac-desc">${p.descricao}</span></div>`).join('');
+    document.getElementById('autoProd').style.display='block';
+    document.getElementById('statusProdCodigo').innerHTML='<span class="status-warn">🔍 '+parciais.length+' encontrados</span>';
+  }else{
+    document.getElementById('autoProd').style.display='none';
+    document.getElementById('statusProdCodigo').innerHTML='<span class="status-warn">⚠️ Código não cadastrado - digite descrição manual ou cadastre no banco</span>';
+    // permite digitar descrição manual
+    document.getElementById('prod_descricao').readOnly=false;
+    document.getElementById('prod_descricao').style.background='#fff';
+    document.getElementById('prod_descricao').placeholder='Digite a descrição manual';
+    document.getElementById('prod_descricao').oninput=()=>{ dadosEtiqueta.descricao=document.getElementById('prod_descricao').value; renderizarTudo(); };
+  }
+  renderizarTudo();
 }
-
-function onDadosChange(){
-  dadosEtiqueta.codigo = document.getElementById('inputCodProduto').value;
-  dadosEtiqueta.descricao = document.getElementById('inputDescricao').value;
-  dadosEtiqueta.ean13 = document.getElementById('inputEAN13').value;
-  dadosEtiqueta.serie = document.getElementById('inputSerie').value;
-  dadosEtiqueta.data = document.getElementById('inputData').value;
+function mostrarAutoProd(){ const v=document.getElementById('prod_codigo').value.trim(); if(!v&&dbProdutos.length){ document.getElementById('autoProd').innerHTML=dbProdutos.slice(0,6).map(p=>`<div class="autocomplete-item" onclick="selecionarProd('${p.id}')"><span class="ac-cod">${p.codigo}</span><span class="ac-desc">${p.descricao}</span></div>`).join(''); document.getElementById('autoProd').style.display='block'; } }
+function esconderAutoProd(){ document.getElementById('autoProd').style.display='none'; }
+function selecionarProd(id){
+  const p=dbProdutos.find(x=>x.id===id); if(!p)return;
+  document.getElementById('prod_codigo').value=p.codigo;
+  document.getElementById('prod_descricao').value=p.descricao;
+  dadosEtiqueta.codigo=p.codigo; dadosEtiqueta.descricao=p.descricao;
+  produtoVinculadoId=p.id;
+  document.getElementById('avisoProducao').style.display='block';
+  document.getElementById('prodVinculadoTxt').innerText=p.codigo+' - '+p.descricao;
+  document.getElementById('avisoVinculo').style.display='block';
+  document.getElementById('vinculoNome').innerText=p.codigo;
+  document.getElementById('statusProdCodigo').innerHTML='<span class="status-ok">✅ Selecionado do banco</span>';
+  esconderAutoProd(); renderizarTudo(); renderizarDB();
+}
+function onProdChange(){
+  dadosEtiqueta.ordem=document.getElementById('prod_ordem').value.trim();
+  dadosEtiqueta.qtd=document.getElementById('prod_qtd').value.trim();
+  dadosEtiqueta.data_producao=document.getElementById('prod_data_prod').value;
+  dadosEtiqueta.hora_producao=document.getElementById('prod_hora_prod').value;
+  dadosEtiqueta.resp_producao=document.getElementById('prod_resp_prod').value.trim();
+  dadosEtiqueta.data_inspecao=document.getElementById('prod_data_insp').value;
+  dadosEtiqueta.hora_inspecao=document.getElementById('prod_hora_insp').value;
+  dadosEtiqueta.resp_inspecao=document.getElementById('prod_resp_insp').value.trim();
   renderizarTudo(); autoSalvar();
 }
-function atualizarDimensoes(){ renderizarTudo(); autoSalvar(); }
+function preencherAgora(){
+  const agora=new Date();
+  document.getElementById('prod_data_prod').value=agora.toISOString().slice(0,10);
+  document.getElementById('prod_hora_prod').value=agora.toTimeString().slice(0,5);
+  document.getElementById('prod_data_insp').value=agora.toISOString().slice(0,10);
+  document.getElementById('prod_hora_insp').value=agora.toTimeString().slice(0,5);
+  onProdChange();
+}
+function salvarOrdem(){
+  if(!dadosEtiqueta.codigo||!dadosEtiqueta.ordem){ alert('Preencha Código e Número da Ordem'); return; }
+  const ordem={...dadosEtiqueta, id:Date.now().toString(), timestamp:new Date().toLocaleString('pt-BR')};
+  historicoOrdens.unshift(ordem);
+  localStorage.setItem(ORDEM_KEY, JSON.stringify(historicoOrdens.slice(0,100)));
+  renderizarOrdens();
+  alert('Ordem salva no histórico!');
+}
+function renderizarOrdens(){
+  const div=document.getElementById('listaOrdens'); if(!div)return;
+  if(historicoOrdens.length===0){ div.innerHTML='<div style="font-size:10px;color:#888;padding:6px">Nenhuma ordem salva</div>'; return; }
+  div.innerHTML=historicoOrdens.slice(0,10).map(o=>`<div style="border:1px solid #ddd;border-radius:4px;padding:5px;margin-bottom:4px;font-size:10px"><b>${o.ordem}</b> - ${o.codigo} - QTD:${o.qtd} <br><span style="color:#666">${o.timestamp} - Prod:${o.resp_producao||'-'} Insp:${o.resp_inspecao||'-'}</span><br><button style="font-size:9px;padding:2px 6px;margin-top:2px" onclick="carregarOrdem('${o.id}')">Carregar</button></div>`).join('');
+}
+function carregarOrdem(id){
+  const o=historicoOrdens.find(x=>x.id===id); if(!o)return;
+  dadosEtiqueta={...o};
+  document.getElementById('prod_codigo').value=o.codigo;
+  document.getElementById('prod_descricao').value=o.descricao;
+  document.getElementById('prod_ordem').value=o.ordem;
+  document.getElementById('prod_qtd').value=o.qtd;
+  document.getElementById('prod_data_prod').value=o.data_producao;
+  document.getElementById('prod_hora_prod').value=o.hora_producao;
+  document.getElementById('prod_resp_prod').value=o.resp_producao;
+  document.getElementById('prod_data_insp').value=o.data_inspecao;
+  document.getElementById('prod_hora_insp').value=o.hora_inspecao;
+  document.getElementById('prod_resp_insp').value=o.resp_inspecao;
+  renderizarTudo();
+}
 
+// EDITOR
+function trocarAba(aba){
+  document.getElementById('conteudoBanco').style.display=aba==='banco'?'block':'none';
+  document.getElementById('conteudoProducao').style.display=aba==='producao'?'block':'none';
+  document.getElementById('conteudoEditor').style.display=aba==='editor'?'block':'none';
+  document.getElementById('tabBanco').classList.toggle('ativo',aba==='banco');
+  document.getElementById('tabProducao').classList.toggle('ativo',aba==='producao');
+  document.getElementById('tabEditor').classList.toggle('ativo',aba==='editor');
+}
+function atualizarDimensoes(){ renderizarTudo(); autoSalvar(); }
 function adicionarElemento(){
-  const tipo = document.getElementById('selectTipo').value;
-  const id = 'el_'+(idContador++);
-  let novo = {id, tipo, x:5, y:5, w:40, h:15, fontSize:11, bold:false, align:'left', conteudo:'', cor:'#000', espessura:2, imagem:''};
-  if(tipo==='texto'){ novo.conteudo='Texto livre'; novo.w=30; novo.h=10; }
-  if(tipo==='linha'){ novo.w=90; novo.h=2; novo.espessura=1; }
+  const tipo=document.getElementById('selectTipo').value;
+  const id='el_'+(idContador++);
   if(tipo==='imagem'){ elementoLogoTemp=id; document.getElementById('inputLogo').click(); return; }
+  let novo={id,tipo,x:5,y:5,w:40,h:12,fontSize:10,bold:false,align:'left',conteudo:'',espessura:1,imagem:''};
+  if(tipo==='texto'){ novo.conteudo='OP: {ordem} - {codigo}'; novo.w=90; novo.h=10; }
+  if(tipo==='linha'){ novo.w=90; novo.h=1; novo.espessura=1; }
   elementos.push(novo); renderizarTudo(); autoSalvar();
 }
-function logoSelecionado(e){
-  const file=e.target.files[0]; if(!file) return;
-  const reader=new FileReader();
-  reader.onload=ev=>{
-    if(elementoLogoTemp){
-      const id=elementoLogoTemp;
-      elementos.push({id, tipo:'imagem', x:5, y:5, w:25, h:15, fontSize:11, bold:false, align:'left', conteudo:'', cor:'#000', espessura:1, imagem:ev.target.result});
-      elementoLogoTemp=null; renderizarTudo(); autoSalvar();
-    } else {
-      // atualizar elemento existente via prompt? We'll handle in edit
-      const el = elementos.find(x=>x.id===window._editLogoId);
-      if(el){ el.imagem=ev.target.result; renderizarTudo(); }
-    }
-  };
-  reader.readAsDataURL(file); e.target.value='';
-}
-function removerElemento(id){ if(confirm('Remover elemento?')){ elementos=elementos.filter(e=>e.id!==id); renderizarTudo(); autoSalvar(); } }
-function atualizarElemento(id, campo, valor){
-  const el = elementos.find(e=>e.id===id); if(!el) return;
-  el[campo]=valor; renderizarTudo(); autoSalvar();
-}
-
+function logoSelecionado(e){ const file=e.target.files[0]; if(!file)return; const reader=new FileReader(); reader.onload=ev=>{ if(elementoLogoTemp){ elementos.push({id:elementoLogoTemp,tipo:'imagem',x:5,y:5,w:25,h:15,fontSize:10,bold:false,align:'left',conteudo:'',espessura:1,imagem:ev.target.result}); elementoLogoTemp=null; renderizarTudo(); autoSalvar(); } }; reader.readAsDataURL(file); e.target.value=''; }
+function removerElemento(id){ if(confirm('Remover?')){ elementos=elementos.filter(e=>e.id!==id); renderizarTudo(); autoSalvar(); } }
+function atualizarElemento(id,campo,valor){ const el=elementos.find(e=>e.id===id); if(!el)return; el[campo]=valor; renderizarTudo(); autoSalvar(); }
 function renderizarLista(){
-  const container=document.getElementById('listaElementos');
-  container.innerHTML = elementos.map(el=> `
+  const c=document.getElementById('listaElementos');
+  c.innerHTML=elementos.map(el=>`
     <div class="elemento-box">
       <h4>${getLabel(el.tipo)} <button class="btn-remover" onclick="removerElemento('${el.id}')">X</button></h4>
       <div class="row-inputs">
@@ -408,259 +471,127 @@ function renderizarLista(){
         <div class="form-group"><label>W%</label><input type="number" value="${el.w}" oninput="atualizarElemento('${el.id}','w',parseFloat(this.value)||0)"></div>
         <div class="form-group"><label>H%</label><input type="number" value="${el.h}" oninput="atualizarElemento('${el.id}','h',parseFloat(this.value)||0)"></div>
       </div>
-      ${el.tipo==='texto'?`<div class="form-group"><label>Conteúdo (use {codigo} {descricao} {ean} {serie} {data} {lote})</label><input value="${el.conteudo.replace(/"/g,'&quot;')}" oninput="atualizarElemento('${el.id}','conteudo',this.value)"></div>`:''}
-      ${el.tipo!=='linha' && el.tipo!=='imagem'?`
-      <div class="row-inputs">
-        <div class="form-group"><label>Fonte px</label><input type="number" value="${el.fontSize}" oninput="atualizarElemento('${el.id}','fontSize',parseInt(this.value)||10)"></div>
-        <div class="form-group"><label>Negrito</label><select onchange="atualizarElemento('${el.id}','bold',this.value==='1')"><option value="0" ${!el.bold?'selected':''}>Não</option><option value="1" ${el.bold?'selected':''}>Sim</option></select></div>
-        <div class="form-group"><label>Alinh.</label><select onchange="atualizarElemento('${el.id}','align',this.value)"><option value="left" ${el.align==='left'?'selected':''}>Esq</option><option value="center" ${el.align==='center'?'selected':''}>Cen</option><option value="right" ${el.align==='right'?'selected':''}>Dir</option></select></div>
-      </div>`:''}
-      ${el.tipo==='linha'?`<div class="form-group"><label>Espessura px</label><input type="number" value="${el.espessura}" oninput="atualizarElemento('${el.id}','espessura',parseInt(this.value)||1)"></div>`:''}
-    </div>
-  `).join('');
+      ${el.tipo==='texto'?`<div class="form-group"><label>Texto - use {codigo} {descricao} {ordem} {qtd} {data_producao} {hora_producao} {resp_producao} {data_inspecao} {hora_inspecao} {resp_inspecao}</label><input value="${(el.conteudo||'').replace(/"/g,'&quot;')}" oninput="atualizarElemento('${el.id}','conteudo',this.value)"></div>`:''}
+      ${el.tipo!=='linha'&&el.tipo!=='imagem'?`<div class="row-inputs"><div class="form-group"><label>Fonte</label><input type="number" value="${el.fontSize}" oninput="atualizarElemento('${el.id}','fontSize',parseInt(this.value)||10)"></div><div class="form-group"><label>Negrito</label><select onchange="atualizarElemento('${el.id}','bold',this.value==='1')"><option value="0" ${!el.bold?'selected':''}>Não</option><option value="1" ${el.bold?'selected':''}>Sim</option></select></div><div class="form-group"><label>Alinh</label><select onchange="atualizarElemento('${el.id}','align',this.value)"><option value="left" ${el.align==='left'?'selected':''}>Esq</option><option value="center" ${el.align==='center'?'selected':''}>Cen</option><option value="right" ${el.align==='right'?'selected':''}>Dir</option></select></div></div>`:''}
+      ${el.tipo==='linha'?`<div class="form-group"><label>Espessura</label><input type="number" value="${el.espessura}" oninput="atualizarElemento('${el.id}','espessura',parseInt(this.value)||1)"></div>`:''}
+    </div>`).join('');
 }
-function getLabel(t){ const m={texto:'Texto Livre', codigo:'Código Produto', descricao:'Descrição', ean13:'EAN-13', code128:'CODE-128', qrcode:'QR Code', serie:'Nº Série', data:'Data', linha:'Linha', imagem:'Imagem/Logo'}; return m[t]||t; }
-
+function getLabel(t){ const m={texto:'Texto Livre',codigo:'Código',descricao:'Descrição',ordem:'Nº Ordem',qtd:'QTD',data_producao:'Data Prod.',hora_producao:'Hora Prod.',resp_producao:'Resp Prod.',data_inspecao:'Data Insp.',hora_inspecao:'Hora Insp.',resp_inspecao:'Resp Insp.',ean13:'EAN-13',code128:'CODE-128',qrcode:'QR Code',linha:'Linha',imagem:'Logo'}; return m[t]||t; }
+function formatarData(d){ if(!d)return''; const [y,m,day]=d.split('-'); return day+'/'+m+'/'+y; }
 function getValorElemento(el){
-  const map={codigo:dadosEtiqueta.codigo||'', descricao:dadosEtiqueta.descricao||'', ean13:dadosEtiqueta.ean13||'', serie:dadosEtiqueta.serie||'', data:dadosEtiqueta.data||'', lote:dadosEtiqueta.lote||''};
+  const d=dadosEtiqueta;
   if(el.tipo==='texto'){
-    let txt = el.conteudo||'';
-    txt = txt.replace(/\{codigo\}/gi, map.codigo).replace(/\{descricao\}/gi, map.descricao).replace(/\{ean\}/gi, map.ean13).replace(/\{serie\}/gi, map.serie).replace(/\{data\}/gi, map.data).replace(/\{lote\}/gi, map.lote||'');
+    let txt=el.conteudo||'';
+    txt=txt.replace(/\{codigo\}/gi,d.codigo||'').replace(/\{descricao\}/gi,d.descricao||'').replace(/\{ordem\}/gi,d.ordem||'').replace(/\{qtd\}/gi,d.qtd||'')
+           .replace(/\{data_producao\}/gi,formatarData(d.data_producao)||'').replace(/\{hora_producao\}/gi,d.hora_producao||'').replace(/\{resp_producao\}/gi,d.resp_producao||'')
+           .replace(/\{data_inspecao\}/gi,formatarData(d.data_inspecao)||'').replace(/\{hora_inspecao\}/gi,d.hora_inspecao||'').replace(/\{resp_inspecao\}/gi,d.resp_inspecao||'')
+           .replace(/\{data\}/gi,formatarData(d.data_producao)||'').replace(/\{hora\}/gi,d.hora_producao||'').replace(/\{ean\}/gi,d.codigo||'');
     return txt;
   }
+  const map={
+    codigo:d.codigo||'', descricao:d.descricao||'', ordem:d.ordem||'', qtd:d.qtd||'',
+    data_producao:formatarData(d.data_producao)||'', hora_producao:d.hora_producao||'', resp_producao:d.resp_producao||'',
+    data_inspecao:formatarData(d.data_inspecao)||'', hora_inspecao:d.hora_inspecao||'', resp_inspecao:d.resp_inspecao||'',
+    ean13:d.codigo||'', code128:d.codigo||'', qrcode:d.codigo+'|'+d.ordem+'|'+d.qtd
+  };
   if(map[el.tipo]!==undefined) return map[el.tipo];
-  if(el.tipo==='ean13' || el.tipo==='code128') return dadosEtiqueta.ean13||dadosEtiqueta.codigo||'1234567890123';
-  if(el.tipo==='qrcode') return (dadosEtiqueta.codigo+'|'+dadosEtiqueta.ean13+'|'+dadosEtiqueta.serie);
+  if(el.tipo==='ean13'||el.tipo==='code128') return d.codigo||'123456';
+  if(el.tipo==='qrcode') return `${d.codigo}|${d.ordem}|QTD:${d.qtd}|PROD:${d.data_producao} ${d.hora_producao} ${d.resp_producao}|INSP:${d.data_inspecao} ${d.hora_inspecao} ${d.resp_inspecao}`;
   return '';
 }
-
 function renderizarTudo(){
-  const w = parseFloat(document.getElementById('inputWidth').value)||100;
-  const h = parseFloat(document.getElementById('inputHeight').value)||75;
-  const etiqueta = document.getElementById('etiqueta');
-  const pxPerMm = 3.8;
-  etiqueta.style.width = (w*pxPerMm)+'px';
-  etiqueta.style.height = (h*pxPerMm)+'px';
-
-  etiqueta.innerHTML = elementos.map(el=>{
-    const val = getValorElemento(el);
+  const w=parseFloat(document.getElementById('inputWidth').value)||100;
+  const h=parseFloat(document.getElementById('inputHeight').value)||70;
+  const etiqueta=document.getElementById('etiqueta');
+  const pxPerMm=3.8;
+  etiqueta.style.width=(w*pxPerMm)+'px';
+  etiqueta.style.height=(h*pxPerMm)+'px';
+  etiqueta.innerHTML=elementos.map(el=>{
+    const val=getValorElemento(el);
     let inner='';
-    if(el.tipo==='imagem'){
-      inner=`<img class="preview-img" src="${el.imagem||'https://via.placeholder.com/120x60?text=LOGO'}">`;
-    } else if(el.tipo==='ean13'){
-      inner=`<div class="preview-ean13"><svg id="barcode_${el.id}"></svg><div style="font-size:9px;font-family:monospace">${val}</div></div>`;
-    } else if(el.tipo==='code128'){
-      inner=`<div class="preview-barcode"><svg id="barcode_${el.id}"></svg><div style="font-size:9px;font-family:monospace">${val}</div></div>`;
-    } else if(el.tipo==='qrcode'){
-      inner=`<div id="qr_${el.id}" class="preview-barcode"></div>`;
-    } else if(el.tipo==='linha'){
-      inner=`<div class="preview-linha"><div class="linha-interna" style="width:100%;height:${el.espessura}px;background:#000"></div></div>`;
-    } else {
-      inner=`<div class="preview-text" style="font-size:${el.fontSize}px;font-weight:${el.bold?'bold':'normal'};text-align:${el.align};justify-content:${el.align==='center'?'center':el.align==='right'?'flex-end':'flex-start'}">${val||el.conteudo||''}</div>`;
-    }
+    if(el.tipo==='imagem'){ inner=`<img style="width:100%;height:100%;object-fit:contain;pointer-events:none" src="${el.imagem||'https://via.placeholder.com/100x50?text=LOGO'}">`; }
+    else if(el.tipo==='ean13'){ inner=`<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center"><svg id="barcode_${el.id}"></svg><div style="font-size:8px;font-family:monospace">${val}</div></div>`; }
+    else if(el.tipo==='code128'){ inner=`<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center"><svg id="barcode_${el.id}"></svg><div style="font-size:8px;font-family:monospace">${val}</div></div>`; }
+    else if(el.tipo==='qrcode'){ inner=`<div id="qr_${el.id}" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center"></div>`; }
+    else if(el.tipo==='linha'){ inner=`<div style="width:100%;height:100%;display:flex;align-items:center"><div class="linha-interna" style="width:100%;height:${el.espessura}px;background:#000"></div></div>`; }
+    else { inner=`<div class="preview-text" style="font-size:${el.fontSize}px;font-weight:${el.bold?'bold':'normal'};text-align:${el.align};justify-content:${el.align==='center'?'center':el.align==='right'?'flex-end':'flex-start'}">${val}</div>`; }
     return `<div class="etiqueta-item-preview" data-id="${el.id}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%">${inner}</div>`;
   }).join('');
-
-  // JsBarcode
   elementos.forEach(el=>{
-    if(el.tipo==='ean13' || el.tipo==='code128'){
-      try{
-        const svg = document.getElementById('barcode_'+el.id);
-        if(svg){
-          const v = getValorElemento(el)||'1234567890128';
-          JsBarcode(svg, v, {format: el.tipo==='ean13'?'ean13':'code128', displayValue:false, height: el.h*2.5, width:1.2, margin:0});
-        }
-      }catch(e){}
+    if(el.tipo==='ean13'||el.tipo==='code128'){
+      try{ const svg=document.getElementById('barcode_'+el.id); if(svg){ JsBarcode(svg, getValorElemento(el)||'123456', {format:el.tipo==='ean13'?'ean13':'code128',displayValue:false,height:el.h*2.5,width:1.2,margin:0}); } }catch(e){}
     }
-    if(el.tipo==='qrcode'){
-      try{
-        const div = document.getElementById('qr_'+el.id);
-        if(div){ div.innerHTML=''; new QRCode(div, {text:getValorElemento(el)||'test', width: el.w*3, height: el.h*3}); }
-      }catch(e){}
-    }
+    if(el.tipo==='qrcode'){ try{ const div=document.getElementById('qr_'+el.id); if(div){ div.innerHTML=''; new QRCode(div,{text:getValorElemento(el)||'test',width:70,height:70}); } }catch(e){} }
   });
-
-  renderizarLista();
-  initInteract();
-
-  // Lote preview se aberto
-  if(document.getElementById('areaLote').style.display!=='none') renderizarLotePreview();
+  renderizarLista(); initInteract();
 }
-
 function initInteract(){
   interact('.etiqueta-item-preview').draggable({
-    modifiers: [interact.modifiers.restrictRect({restriction:'parent'})],
+    modifiers:[interact.modifiers.restrictRect({restriction:'parent'})],
     listeners:{
-      move(ev){
-        const target=ev.target; const id=target.getAttribute('data-id'); const el=elementos.find(e=>e.id===id); if(!el) return;
-        const parent = document.getElementById('etiqueta');
-        const dx = (ev.dx / parent.offsetWidth)*100;
-        const dy = (ev.dy / parent.offsetHeight)*100;
-        el.x+=dx; el.y+=dy;
-        target.style.left=el.x+'%'; target.style.top=el.y+'%';
-      },
+      move(ev){ const t=ev.target; const id=t.getAttribute('data-id'); const el=elementos.find(e=>e.id===id); if(!el)return; const p=document.getElementById('etiqueta'); const dx=(ev.dx/p.offsetWidth)*100; const dy=(ev.dy/p.offsetHeight)*100; el.x+=dx; el.y+=dy; t.style.left=el.x+'%'; t.style.top=el.y+'%'; },
       end(){ autoSalvar(); renderizarLista(); }
     }
   }).resizable({
     edges:{left:true,right:true,bottom:true,top:true},
-    modifiers:[interact.modifiers.restrictSize({min:{width:10,height:10}})],
+    modifiers:[interact.modifiers.restrictSize({min:{width:5,height:5}})],
     listeners:{
-      move(ev){
-        const target=ev.target; const id=target.getAttribute('data-id'); const el=elementos.find(e=>e.id===id); if(!el) return;
-        const parent = document.getElementById('etiqueta');
-        el.w = (ev.rect.width / parent.offsetWidth)*100;
-        el.h = (ev.rect.height / parent.offsetHeight)*100;
-        el.x = (ev.rect.left - parent.getBoundingClientRect().left)/parent.offsetWidth*100;
-        el.y = (ev.rect.top - parent.getBoundingClientRect().top)/parent.offsetHeight*100;
-        target.style.width=el.w+'%'; target.style.height=el.h+'%';
-        target.style.left=el.x+'%'; target.style.top=el.y+'%';
-      },
+      move(ev){ const t=ev.target; const id=t.getAttribute('data-id'); const el=elementos.find(e=>e.id===id); if(!el)return; const p=document.getElementById('etiqueta'); el.w=(ev.rect.width/p.offsetWidth)*100; el.h=(ev.rect.height/p.offsetHeight)*100; el.x=(ev.rect.left-p.getBoundingClientRect().left)/p.offsetWidth*100; el.y=(ev.rect.top-p.getBoundingClientRect().top)/p.offsetHeight*100; t.style.width=el.w+'%'; t.style.height=el.h+'%'; t.style.left=el.x+'%'; t.style.top=el.y+'%'; },
       end(){ autoSalvar(); renderizarLista(); renderizarTudo(); }
     }
   });
-  // duplo clique edita texto
-  document.querySelectorAll('.etiqueta-item-preview').forEach(div=>{
-    div.ondblclick=()=>{
-      const id=div.getAttribute('data-id'); const el=elementos.find(e=>e.id===id);
-      if(el && el.tipo==='texto'){
-        const novo=prompt('Editar texto (use {codigo} {descricao} {ean} {serie} {data} {lote}):', el.conteudo);
-        if(novo!==null){ el.conteudo=novo; renderizarTudo(); autoSalvar(); }
-      }
-    };
-  });
 }
-
 function autoSalvar(){
-  const estado={elementos,idContador,dadosEtiqueta,largura:document.getElementById('inputWidth').value,altura:document.getElementById('inputHeight').value,versao:'4.0',data:new Date().toISOString()};
+  const estado={elementos,idContador,dadosEtiqueta,largura:document.getElementById('inputWidth').value,altura:document.getElementById('inputHeight').value,versao:'6.0',data:new Date().toISOString()};
   localStorage.setItem(LAYOUT_KEY, JSON.stringify(estado));
-  document.getElementById('statusSave').innerText='Salvo automaticamente '+new Date().toLocaleTimeString('pt-BR');
+  const s=document.getElementById('statusSave'); if(s) s.innerText='Salvo '+new Date().toLocaleTimeString('pt-BR');
 }
-function salvarTudo(){ autoSalvar(); document.getElementById('btnSalvar').classList.add('salvo'); document.getElementById('btnSalvar').innerText='✅ Salvo!'; setTimeout(()=>{document.getElementById('btnSalvar').classList.remove('salvo'); document.getElementById('btnSalvar').innerText='💾 Salvar Layout';},1500); }
-function exportarConfig(){
-  const estado={elementos,idContador,dadosEtiqueta,largura:document.getElementById('inputWidth').value,altura:document.getElementById('inputHeight').value};
-  const blob=new Blob([JSON.stringify(estado,null,2)],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='etiqueta_layout_'+new Date().toISOString().slice(0,10)+'.json'; a.click();
-}
-function importarConfig(e){
-  const file=e.target.files[0]; if(!file) return;
-  const reader=new FileReader(); reader.onload=ev=>{
-    try{
-      const est=JSON.parse(ev.target.result);
-      if(est.elementos){ elementos=est.elementos; idContador=est.idContador||100; if(est.dadosEtiqueta) dadosEtiqueta=est.dadosEtiqueta;
-        if(est.largura) document.getElementById('inputWidth').value=est.largura;
-        if(est.altura) document.getElementById('inputHeight').value=est.altura;
-        document.getElementById('inputCodProduto').value=dadosEtiqueta.codigo||'';
-        document.getElementById('inputDescricao').value=dadosEtiqueta.descricao||'';
-        document.getElementById('inputEAN13').value=dadosEtiqueta.ean13||'';
-        document.getElementById('inputSerie').value=dadosEtiqueta.serie||'';
-        document.getElementById('inputData').value=dadosEtiqueta.data||'';
-        renderizarTudo(); alert('Layout importado com '+elementos.length+' elementos'); }
-    }catch(err){ alert('Erro: '+err.message); }
-  }; reader.readAsText(file); e.target.value='';
-}
-
-// LOTE
-function abrirLote(){
-  const selecionados = prompt('Digite os códigos separados por vírgula ou deixe vazio para abrir seletor visual.\nEx: ELG-PCB-8821,MOT-WEG-15CV\n\nDeixe vazio e clique OK para abrir grade visual:');
-  if(selecionados===null) return;
-  if(selecionados.trim()){
-    const cods = selecionados.split(',').map(s=>s.trim().toUpperCase());
-    loteSelecionados = dbProdutos.filter(p=> cods.includes(p.codigo.toUpperCase()));
-  } else {
-    // abre modal visual simples: seleciona todos?
-    const todos = confirm('Selecionar TODOS os '+dbProdutos.length+' produtos do banco para o lote?\n\nOK = Todos\nCancelar = Escolher manualmente (será aberto um checklist)');
-    if(todos){ loteSelecionados = [...dbProdutos]; }
-    else {
-      // checklist via prompt ainda, mas vamos abrir area lote e renderizar checkboxes
-      loteSelecionados = [...dbProdutos];
-      renderizarSeletorLote();
-      return;
-    }
-  }
-  renderizarLote();
-}
-function renderizarSeletorLote(){
-  const area = document.getElementById('areaLote');
-  const grid = document.getElementById('gridLote');
-  area.style.display='block';
-  document.getElementById('etiqueta').style.display='none';
-  grid.innerHTML = dbProdutos.map(p=> `<label style="font-size:11px;display:flex;gap:6px;align-items:center;border:1px solid #ddd;padding:6px;border-radius:4px"><input type="checkbox" checked value="${p.id}" class="chkLote"> ${p.codigo} - ${p.descricao.slice(0,30)}</label>`).join('') + `<div style="grid-column:1/-1;display:flex;gap:6px"><button class="btn-save" onclick="confirmarLote()">Confirmar Seleção</button><button class="btn-add" style="background:#6c757d" onclick="fecharLote()">Cancelar</button></div>`;
-}
-function confirmarLote(){
-  const checks = document.querySelectorAll('.chkLote:checked');
-  loteSelecionados = Array.from(checks).map(c=> dbProdutos.find(p=>p.id===c.value)).filter(Boolean);
-  renderizarLote();
-}
-function renderizarLote(){
-  const area = document.getElementById('areaLote');
-  const grid = document.getElementById('gridLote');
-  area.style.display='block';
-  document.getElementById('etiqueta').style.display='none';
-  document.getElementById('infoAutoPrint').style.display='none';
-  grid.innerHTML='';
-  // expandir por qtd
-  let expandido=[];
-  loteSelecionados.forEach(p=>{ for(let i=0;i<(p.qtd||1);i++) expandido.push(p); });
-  expandido.forEach(p=>{
-    const w = document.getElementById('inputWidth').value;
-    const h = document.getElementById('inputHeight').value;
-    const div = document.createElement('div');
-    div.style.border='1px dashed #999';
-    div.style.width='100%';
-    div.style.height=(h*3)+'px';
-    div.style.position='relative';
-    div.style.background='#fff';
-    div.innerHTML = elementos.map(el=>{
-      const dadosTemp = {codigo:p.codigo, descricao:p.descricao, ean13:p.ean, serie:p.serie, data:p.data, lote:p.lote};
-      let val='';
-      if(el.tipo==='texto'){ val = (el.conteudo||'').replace(/\{codigo\}/gi,dadosTemp.codigo).replace(/\{descricao\}/gi,dadosTemp.descricao).replace(/\{ean\}/gi,dadosTemp.ean13).replace(/\{serie\}/gi,dadosTemp.serie).replace(/\{data\}/gi,dadosTemp.data).replace(/\{lote\}/gi,dadosTemp.lote||''); }
-      else if(dadosTemp[el.tipo]!==undefined) val=dadosTemp[el.tipo];
-      else if(el.tipo==='ean13'||el.tipo==='code128') val=dadosTemp.ean13||dadosTemp.codigo;
-      else if(el.tipo==='qrcode') val=dadosTemp.codigo+'|'+dadosTemp.ean13;
-      else val=el.conteudo;
-      if(el.tipo==='linha') return `<div style="position:absolute;left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.espessura}px;background:#000"></div>`;
-      if(el.tipo==='ean13'||el.tipo==='code128') return `<div style="position:absolute;left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;font-family:monospace;font-size:8px;border:1px solid #000;display:flex;align-items:center;justify-content:center">${val}</div>`;
-      if(el.tipo==='imagem') return `<div style="position:absolute;left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;"><img src="${el.imagem}" style="width:100%;height:100%;object-fit:contain"></div>`;
-      return `<div style="position:absolute;left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;font-size:${el.fontSize*0.7}px;font-weight:${el.bold?'bold':'normal'};text-align:${el.align};overflow:hidden">${val}</div>`;
-    }).join('');
-    grid.appendChild(div);
-  });
-}
-function renderizarLotePreview(){ if(loteSelecionados.length) renderizarLote(); }
-function fecharLote(){ document.getElementById('areaLote').style.display='none'; document.getElementById('etiqueta').style.display='block'; document.getElementById('infoAutoPrint').style.display='block'; }
-function imprimirLote(){ window.print(); }
+function salvarTudo(){ autoSalvar(); const b=document.getElementById('btnSalvar'); b.classList.add('salvo'); b.innerText='✅ Salvo!'; setTimeout(()=>{b.classList.remove('salvo'); b.innerText='💾 Salvar Layout';},1500); }
 
 window.onload=()=>{
-  carregarDB();
-  document.getElementById('db_data').value = new Date().toISOString().slice(0,10);
-  document.getElementById('inputData').value = new Date().toISOString().slice(0,10);
-  renderizarDB();
+  carregarDB(); renderizarDB(); renderizarOrdens();
+  const hoje=new Date().toISOString().slice(0,10);
+  const agora=new Date().toTimeString().slice(0,5);
+  if(!document.getElementById('prod_data_prod').value) document.getElementById('prod_data_prod').value=hoje;
+  if(!document.getElementById('prod_hora_prod').value) document.getElementById('prod_hora_prod').value=agora;
+  if(!document.getElementById('prod_data_insp').value) document.getElementById('prod_data_insp').value=hoje;
+  if(!document.getElementById('prod_hora_insp').value) document.getElementById('prod_hora_insp').value=agora;
   try{
-    const raw = localStorage.getItem(LAYOUT_KEY);
+    const raw=localStorage.getItem(LAYOUT_KEY);
     if(raw){
-      const est = JSON.parse(raw);
-      if(est.elementos && est.elementos.length){ elementos=est.elementos; idContador=est.idContador||100; if(est.dadosEtiqueta) dadosEtiqueta=est.dadosEtiqueta;
+      const est=JSON.parse(raw);
+      if(est.elementos&&est.elementos.length){ elementos=est.elementos; idContador=est.idContador||200; if(est.dadosEtiqueta){ dadosEtiqueta={...dadosEtiqueta,...est.dadosEtiqueta}; 
+        document.getElementById('prod_codigo').value=dadosEtiqueta.codigo||'';
+        document.getElementById('prod_descricao').value=dadosEtiqueta.descricao||'';
+        document.getElementById('prod_ordem').value=dadosEtiqueta.ordem||'';
+        document.getElementById('prod_qtd').value=dadosEtiqueta.qtd||'1';
+        document.getElementById('prod_data_prod').value=dadosEtiqueta.data_producao||hoje;
+        document.getElementById('prod_hora_prod').value=dadosEtiqueta.hora_producao||agora;
+        document.getElementById('prod_resp_prod').value=dadosEtiqueta.resp_producao||'';
+        document.getElementById('prod_data_insp').value=dadosEtiqueta.data_inspecao||hoje;
+        document.getElementById('prod_hora_insp').value=dadosEtiqueta.hora_inspecao||agora;
+        document.getElementById('prod_resp_insp').value=dadosEtiqueta.resp_inspecao||'';
+      }
         if(est.largura) document.getElementById('inputWidth').value=est.largura;
         if(est.altura) document.getElementById('inputHeight').value=est.altura;
-        document.getElementById('inputCodProduto').value=dadosEtiqueta.codigo||'';
-        document.getElementById('inputDescricao').value=dadosEtiqueta.descricao||'';
-        document.getElementById('inputEAN13').value=dadosEtiqueta.ean13||'';
-        document.getElementById('inputSerie').value=dadosEtiqueta.serie||'';
-        document.getElementById('inputData').value=dadosEtiqueta.data||'';
       }
     }
   }catch(e){}
   if(elementos.length===0){
     elementos=[
-      {id:'el_1', tipo:'codigo', x:4, y:5, w:55, h:12, fontSize:12, bold:true, align:'left', conteudo:'', cor:'#000', espessura:1, imagem:''},
-      {id:'el_2', tipo:'descricao', x:4, y:19, w:90, h:14, fontSize:9, bold:false, align:'left', conteudo:'', cor:'#000', espessura:1, imagem:''},
-      {id:'el_3', tipo:'ean13', x:4, y:36, w:58, h:28, fontSize:9, bold:false, align:'center', conteudo:'', cor:'#000', espessura:1, imagem:''},
-      {id:'el_4', tipo:'serie', x:65, y:36, w:30, h:10, fontSize:8, bold:false, align:'left', conteudo:'', cor:'#000', espessura:1, imagem:''},
-      {id:'el_5', tipo:'data', x:65, y:48, w:30, h:8, fontSize:7, bold:false, align:'left', conteudo:'', cor:'#000', espessura:1, imagem:''},
-      {id:'el_6', tipo:'linha', x:4, y:68, w:90, h:1, fontSize:10, bold:false, align:'left', conteudo:'', cor:'#000', espessura:1, imagem:''},
-      {id:'el_7', tipo:'texto', x:4, y:71, w:90, h:8, fontSize:7, bold:false, align:'left', conteudo:'Lote: {lote} | Cliente: {codigo}', cor:'#000', espessura:1, imagem:''},
+      {id:'el_1',tipo:'codigo',x:2,y:2,w:35,h:10,fontSize:11,bold:true,align:'left',conteudo:'',espessura:1,imagem:''},
+      {id:'el_2',tipo:'ordem',x:40,y:2,w:28,h:10,fontSize:10,bold:true,align:'left',conteudo:'',espessura:1,imagem:''},
+      {id:'el_3',tipo:'qtd',x:70,y:2,w:15,h:10,fontSize:10,bold:true,align:'left',conteudo:'',espessura:1,imagem:''},
+      {id:'el_4',tipo:'descricao',x:2,y:14,w:96,h:14,fontSize:9,bold:false,align:'left',conteudo:'',espessura:1,imagem:''},
+      {id:'el_5',tipo:'linha',x:2,y:30,w:96,h:1,fontSize:10,bold:false,align:'left',conteudo:'',espessura:1,imagem:''},
+      {id:'el_6',tipo:'texto',x:2,y:32,w:96,h:8,fontSize:7,bold:false,align:'left',conteudo:'PROD: {data_producao} {hora_producao} - {resp_producao}',espessura:1,imagem:''},
+      {id:'el_7',tipo:'texto',x:2,y:40,w:96,h:8,fontSize:7,bold:false,align:'left',conteudo:'INSP: {data_inspecao} {hora_inspecao} - {resp_inspecao}',espessura:1,imagem:''},
+      {id:'el_8',tipo:'qrcode',x:75,y:50,w:22,h:28,fontSize:10,bold:false,align:'left',conteudo:'',espessura:1,imagem:''},
+      {id:'el_9',tipo:'code128',x:2,y:55,w:70,h:22,fontSize:8,bold:false,align:'left',conteudo:'',espessura:1,imagem:''},
     ];
   }
+  // inicializa dados da tela produção
+  onProdChange();
   renderizarTudo();
   setInterval(autoSalvar, 3000);
 };
