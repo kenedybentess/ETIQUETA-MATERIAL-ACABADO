@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gerador de Etiquetas - Com Banco de Dados</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif}
+body{background:#f4f6f9;display:flex;height:100vh;overflow:hidden}
+.sidebar{width:480px;background:#fff;border-right:1px solid #ddd;display:flex;flex-direction:column}
+.sidebar-top{display:flex;background:#f1f3f5;border-bottom:1px solid #ddd}
+.tab-btn{flex:1;padding:12px 8px;border:none;background:transparent;cursor:pointer;font-weight:700;font-size:12px;color:#666;border-bottom:3px solid transparent}
+.tab-btn.ativo{background:#fff;color:#0d6efd;border-bottom-color:#0d6efd}
+.sidebar-content{flex:1;overflow-y:auto;padding:12px}
+.sidebar h2{font-size:12px;margin-bottom:8px;color:#333;border-bottom:2px solid #007bff;padding-bottom:3px;margin-top:14px;text-transform:uppercase}
+.form-group{margin-bottom:7px} .form-group label{display:block;font-size:10px;font-weight:bold;color:#555;margin-bottom:2px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;font-size:12px}
+.row-inputs{display:flex;gap:6px} .row-inputs .form-group{flex:1}
+.dados-box{background:linear-gradient(135deg,#e7f1ff,#d0e2ff);border:2px solid #0d6efd;border-radius:8px;padding:10px;margin-bottom:10px}
+.dados-box.vinculado{background:linear-gradient(135deg,#d1e7dd,#a3d9a5);border-color:#198754}
+.vinculo-aviso{background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:6px;margin-bottom:10px;font-size:10px;color:#856404}
+.elemento-box{background:#f9f9f9;border:1px solid #e0e0e0;padding:8px;border-radius:4px;margin-bottom:8px}
+.elemento-box.vinculado{border-color:#0d6efd;background:#e7f1ff}
+.elemento-box h4{font-size:11px;color:#007bff;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.btn-remover{background:#dc3545;color:white;border:none;padding:2px 6px;font-size:10px;border-radius:3px;cursor:pointer}
+.btn-add{background:#17a2b8;color:white;border:none;padding:10px;width:100%;border-radius:6px;cursor:pointer;font-weight:bold;font-size:12px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-save{background:#0d6efd;color:white;border:none;padding:9px;width:100%;border-radius:6px;cursor:pointer;font-weight:bold;font-size:12px;margin-bottom:6px}
+.btn-save.salvo{background:#198754 !important}
+.btn-db{background:#198754;color:white;border:none;padding:8px;width:100%;border-radius:6px;cursor:pointer;font-weight:bold;font-size:11px;margin-bottom:6px}
+.print-btn{background:#28a745;color:white;border:none;padding:10px;width:100%;border-radius:4px;cursor:pointer;font-weight:bold;font-size:13px;margin-top:6px}
+.preview-area{flex:1;display:flex;justify-content:center;align-items:center;background:#e9ecef;padding:20px;overflow:auto;flex-direction:column;gap:12px}
+#etiqueta{background:#fff;border:2px solid #999;position:relative;box-shadow:0 4px 10px rgba(0,0,0,0.2);overflow:hidden;flex-shrink:0}
+.etiqueta-item-preview{position:absolute;user-select:none;touch-action:none;box-sizing:border-box;border:1px dashed #007bff;background-color:rgba(0,123,255,0.03);cursor:move;display:flex;align-items:center;justify-content:center}
+.preview-img{width:100%;height:100%;object-fit:contain;pointer-events:none}
+.preview-ean13,.preview-barcode{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;overflow:hidden}
+.barcode-font{font-family:'Libre Barcode 39',cursive;line-height:1}
+.preview-text{width:100%;height:100%;display:flex;align-items:center;overflow:hidden;pointer-events:none;padding:0 2px}
+.preview-linha{width:100%;height:100%;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.linha-interna{background-color:#000 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.badge-vinculo{display:inline-block;background:#198754;color:white;font-size:9px;padding:2px 6px;border-radius:10px;margin-left:4px}
+/* BANCO */
+.db-item{border:1px solid #dee2e6;border-radius:6px;padding:7px;margin-bottom:6px;background:#fff;display:flex;gap:8px;align-items:center}
+.db-item:hover{background:#f8f9ff;border-color:#0d6efd}
+.db-item .db-info{flex:1;min-width:0}
+.db-item .db-codigo{font-family:monospace;font-weight:700;font-size:11px;color:#0d6efd}
+.db-item .db-desc{font-size:11px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.db-item .db-meta{font-size:9px;color:#666}
+.db-actions{display:flex;gap:3px;flex-direction:column}
+.db-actions button{padding:4px 7px;border:none;border-radius:4px;font-size:9px;cursor:pointer;font-weight:600}
+.btn-usar{background:#0d6efd;color:#fff} .btn-editar{background:#ffc107;color:#000} .btn-del{background:#dc3545;color:#fff}
+.search-box{position:sticky;top:0;background:#fff;padding-bottom:8px;z-index:2}
+@media print{
+  .sidebar,.no-print{display:none !important}
+  body{height:auto !important;overflow:visible !important;background:white !important;display:block !important}
+  .preview-area{background:white !important;padding:0 !important;margin:0 !important;display:block !important;overflow:visible !important;height:auto !important}
+  #etiqueta{border:none !important;box-shadow:none !important}
+  .etiqueta-item-preview{border:none !important;background:transparent !important}
+  @page{margin:0}
+}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-top">
+    <button class="tab-btn ativo" id="tabBanco" onclick="trocarAba('banco')">📦 BANCO DE DADOS</button>
+    <button class="tab-btn" id="tabEditor" onclick="trocarAba('editor')">🎨 EDITOR</button>
+  </div>
+  <div class="sidebar-content" id="conteudoBanco">
+    <div class="search-box">
+      <div style="display:flex;gap:6px;margin-bottom:8px">
+        <span style="font-size:11px;font-weight:700" id="contadorDB">0 produtos</span>
+        <span style="margin-left:auto;font-size:10px;color:#198754" id="statusDB"></span>
+      </div>
+      <div class="form-group"><input id="buscaDB" placeholder="🔍 Buscar por código, descrição ou EAN..." oninput="renderizarDB()"></div>
+    </div>
+
+    <h2>➕ Adicionar / Editar Produto</h2>
+    <input type="hidden" id="db_edit_id">
+    <div class="form-group"><label>Código do Produto *</label><input id="db_codigo" placeholder="ELG-PCB-8821"></div>
+    <div class="form-group"><label>Descrição do Produto *</label><textarea id="db_desc" rows="3" placeholder="Ex: Placa Eletrônica Elgin 48K BTU Inversora" style="resize:vertical"></textarea></div>
+    <button class="btn-db" onclick="salvarProdutoDB()">💾 Salvar Produto no Banco</button>
+    <button class="btn-add" style="background:#6c757d" onclick="limparFormDB()">Limpar Formulário</button>
+
+    <div style="display:flex;gap:6px;margin:10px 0">
+      <button class="btn-save" style="background:#6f42c1" onclick="exportarDB()">📤 Exportar JSON</button>
+      <button class="btn-save" style="background:#fd7e14" onclick="document.getElementById('importDB').click()">📥 Importar</button>
+      <input type="file" id="importDB" accept=".json,.csv" style="display:none" onchange="importarDB(event)">
+    </div>
+
+    <h2>📋 Produtos Cadastrados</h2>
+    <div id="listaDB"></div>
+
+    <button class="print-btn" onclick="abrirLote()" style="margin-top:12px">🖨️ Gerar Etiquetas em Lote</button>
+    <div style="font-size:10px;color:#666;margin-top:6px">Selecione vários produtos no modal de lote para imprimir grade 2x5 em A4</div>
+  </div>
+
+  <div class="sidebar-content" id="conteudoEditor" style="display:none">
+    <div class="vinculo-aviso" id="avisoVinculo" style="display:none">🔗 Produto vinculado do banco. <span id="vinculoNome"></span></div>
+
+    <h2>📐 Dimensões da Etiqueta</h2>
+    <div class="row-inputs">
+      <div class="form-group"><label>Largura (mm)</label><input type="number" id="inputWidth" value="100" onchange="atualizarDimensoes()"></div>
+      <div class="form-group"><label>Altura (mm)</label><input type="number" id="inputHeight" value="75" onchange="atualizarDimensoes()"></div>
+    </div>
+
+    <div class="dados-box" id="dadosBox">
+      <h2 style="margin-top:0;border:none">📦 Dados da Etiqueta Atual</h2>
+      <div class="form-group"><label>Código Produto</label><input id="inputCodProduto" oninput="onDadosChange()"></div>
+      <div class="form-group"><label>Descrição</label><input id="inputDescricao" oninput="onDadosChange()"></div>
+      <div class="row-inputs">
+        <div class="form-group"><label>EAN13</label><input id="inputEAN13" oninput="onDadosChange()"></div>
+        <div class="form-group"><label>Nº Série</label><input id="inputSerie" oninput="onDadosChange()"></div>
+      </div>
+      <div class="form-group"><label>Data</label><input id="inputData" type="date" oninput="onDadosChange()"></div>
+      <button class="btn-db" id="btnAtualizarBanco" style="display:none" onclick="atualizarNoBanco()">⬆️ Atualizar este produto no Banco</button>
+    </div>
+
+    <h2>🧩 Elementos da Etiqueta (mesmos do original)</h2>
+    <div id="listaElementos"></div>
+
+    <div class="row-inputs">
+      <select id="selectTipo" class="form-group" style="flex:1;padding:8px;border-radius:6px;border:1px solid #ccc">
+        <option value="texto">Texto Livre</option>
+        <option value="codigo">Código Produto</option>
+        <option value="descricao">Descrição</option>
+        <option value="ean13">EAN-13 (barras)</option>
+        <option value="code128">CODE-128 (barras)</option>
+        <option value="qrcode">QR Code</option>
+        <option value="serie">Nº Série</option>
+        <option value="data">Data</option>
+        <option value="linha">Linha Divisória</option>
+        <option value="imagem">Imagem / Logo</option>
+      </select>
+      <button class="btn-add" style="flex:1" onclick="adicionarElemento()">+ Adicionar</button>
+    </div>
+
+    <button class="btn-save" id="btnSalvar" onclick="salvarTudo()">💾 Salvar Layout</button>
+    <div style="display:flex;gap:6px">
+      <button class="btn-save" style="background:#6c757d" onclick="exportarConfig()">Exportar Layout</button>
+      <button class="btn-save" style="background:#6c757d" onclick="document.getElementById('importLayout').click()">Importar Layout</button>
+      <input type="file" id="importLayout" accept=".json" style="display:none" onchange="importarConfig(event)">
+    </div>
+    <div id="statusSave" style="font-size:10px;color:#666;margin-top:4px"></div>
+
+    <button class="print-btn" onclick="window.print()">🖨️ IMPRIMIR ETIQUETA ATUAL</button>
+  </div>
+</div>
+
+<div class="preview-area">
+  <div id="etiqueta"></div>
+  <div id="infoAutoPrint" style="font-size:11px;color:#666;background:#fff;padding:6px 10px;border-radius:6px;border:1px solid #ddd">💡 Arraste e redimensione os elementos. Dê duplo clique para editar texto livre.</div>
+  <div id="areaLote" style="display:none;background:#fff;padding:12px;border-radius:8px;width:100%;max-width:800px">
+    <h3 style="font-size:13px;margin-bottom:8px">Lote selecionado - Preview A4 (2 colunas)</h3>
+    <div id="gridLote" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+    <button class="print-btn" onclick="imprimirLote()">🖨️ Imprimir Lote</button>
+    <button class="btn-add" style="background:#6c757d" onclick="fecharLote()">Fechar Lote</button>
+  </div>
+</div>
+
+<input type="file" id="inputLogo" accept="image/*" style="display:none" onchange="logoSelecionado(event)">
+
+<script>
+const DB_KEY='etiquetas_db_v2';
+const LAYOUT_KEY='etiqueta_layout_v2';
+let dbProdutos = [];
+let produtoVinculadoId = null;
+let loteSelecionados = [];
+
+let dadosEtiqueta = {codigo:'ELG-PCB-8821', descricao:'Placa Eletrônica Elgin 48K BTU Inversora', ean13:'7891234560011', serie:'SN88210045', data: new Date().toISOString().slice(0,10)};
+let elementos = [];
+let idContador = 100;
+let elementoLogoTemp = null;
+
+// --- BANCO DE DADOS ---
+function carregarDB(){
+  try{
+    const raw = localStorage.getItem(DB_KEY);
+    if(raw){ 
+      dbProdutos = JSON.parse(raw).map(p=> ({id:p.id||Date.now().toString(), codigo:p.codigo||'', descricao:p.descricao||p.desc||''})).filter(p=>p.codigo);
+    }
+    if(dbProdutos.length===0){
+      dbProdutos = [
+        {id:'1', codigo:'ELG-PCB-8821', descricao:'Placa Eletrônica Elgin 48K BTU Inversora'},
+        {id:'2', codigo:'MOT-WEG-15CV', descricao:'Motor WEG W22 15CV 4P 220/380V'},
+        {id:'3', codigo:'INV-CFW500-A', descricao:'Inversor de Frequência CFW500 5CV'},
+        {id:'4', codigo:'PLC-CLP-1200', descricao:'CLP Siemens S7-1200 CPU 1214C'},
+        {id:'5', codigo:'SNS-PT100-AL', descricao:'Sensor de Temperatura PT100 3 fios 150mm'},
+        {id:'6', codigo:'FON-24V-10A', descricao:'Fonte Chaveada 24V 10A Trilho DIN'},
+      ];
+      salvarDB();
+    }
+  }catch(e){ dbProdutos=[]; }
+}
+function salvarDB(){ localStorage.setItem(DB_KEY, JSON.stringify(dbProdutos)); document.getElementById('contadorDB').innerText = dbProdutos.length+' produtos'; }
+function renderizarDB(){
+  const busca = (document.getElementById('buscaDB').value||'').toLowerCase();
+  const lista = document.getElementById('listaDB');
+  const filtrados = dbProdutos.filter(p=> !busca || (p.codigo+' '+p.descricao+' '+p.ean+' '+(p.serie||'')).toLowerCase().includes(busca));
+  lista.innerHTML = filtrados.map(p=> `
+    <div class="db-item">
+      <div class="db-info">
+        <div class="db-codigo">${p.codigo}</div>
+        <div class="db-desc">${p.descricao}</div>
+      </div>
+      <div class="db-actions">
+        <button class="btn-usar" onclick="usarProduto('${p.id}')">USAR</button>
+        <button class="btn-editar" onclick="editarProduto('${p.id}')">EDITAR</button>
+        <button class="btn-del" onclick="excluirProduto('${p.id}')">X</button>
+      </div>
+    </div>
+  `).join('') || '<div style="font-size:11px;color:#888;padding:10px;text-align:center">Nenhum produto encontrado</div>';
+  document.getElementById('contadorDB').innerText = filtrados.length+' / '+dbProdutos.length+' produtos';
+}
+function limparFormDB(){
+  document.getElementById('db_edit_id').value='';
+  document.getElementById('db_codigo').value='';
+  document.getElementById('db_desc').value='';
+}
+function salvarProdutoDB(){
+  const id = document.getElementById('db_edit_id').value || Date.now().toString();
+  const codigo = document.getElementById('db_codigo').value.trim();
+  const desc = document.getElementById('db_desc').value.trim();
+  if(!codigo || !desc){ alert('Código e Descrição são obrigatórios'); return; }
+  const prod = { id, codigo, descricao: desc };
+  const idx = dbProdutos.findIndex(p=>p.id===id);
+  if(idx>=0) dbProdutos[idx]=prod; else dbProdutos.unshift(prod);
+  salvarDB(); renderizarDB(); limparFormDB();
+  document.getElementById('statusDB').innerText='✅ Salvo!';
+  setTimeout(()=>document.getElementById('statusDB').innerText='',2000);
+}
+function editarProduto(id){
+  const p = dbProdutos.find(x=>x.id===id); if(!p) return;
+  document.getElementById('db_edit_id').value=p.id;
+  document.getElementById('db_codigo').value=p.codigo;
+  document.getElementById('db_desc').value=p.descricao;
+}
+function excluirProduto(id){ if(confirm('Excluir produto?')){ dbProdutos=dbProdutos.filter(p=>p.id!==id); salvarDB(); renderizarDB(); } }
+function usarProduto(id){
+  const p = dbProdutos.find(x=>x.id===id); if(!p) return;
+  produtoVinculadoId = id;
+  dadosEtiqueta.codigo = p.codigo;
+  dadosEtiqueta.descricao = p.descricao;
+  document.getElementById('inputCodProduto').value=p.codigo;
+  document.getElementById('inputDescricao').value=p.descricao;
+  document.getElementById('dadosBox').classList.add('vinculado');
+  document.getElementById('avisoVinculo').style.display='block';
+  document.getElementById('vinculoNome').innerText = p.codigo+' - '+p.descricao;
+  document.getElementById('btnAtualizarBanco').style.display='block';
+  trocarAba('editor');
+  renderizarTudo();
+}
+function atualizarNoBanco(){
+  if(!produtoVinculadoId) return;
+  const idx = dbProdutos.findIndex(p=>p.id===produtoVinculadoId);
+  if(idx>=0){
+    dbProdutos[idx].codigo = document.getElementById('inputCodProduto').value;
+    dbProdutos[idx].descricao = document.getElementById('inputDescricao').value;
+    dbProdutos[idx].ean = document.getElementById('inputEAN13').value;
+    dbProdutos[idx].serie = document.getElementById('inputSerie').value;
+    dbProdutos[idx].data = document.getElementById('inputData').value;
+    salvarDB(); renderizarDB();
+    alert('Banco atualizado!');
+  }
+}
+function exportarDB(){
+  const blob = new Blob([JSON.stringify(dbProdutos,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='banco_etiquetas_'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+}
+function importarDB(e){
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      let dados;
+      if(file.name.endsWith('.csv')){
+        const linhas = ev.target.result.split('\n').filter(l=>l.trim());
+        dados = linhas.slice(1).map((l,i)=>{ const [codigo,descricao,ean,serie]=l.split(','); return {id:Date.now()+i+'', codigo:(codigo||'').trim(), descricao:(descricao||'').trim(), ean:(ean||'').trim(), serie:(serie||'').trim(), modelo:'', cliente:'', lote:'', data:new Date().toISOString().slice(0,10), obs:'import csv', qtd:1}; });
+      } else { dados = JSON.parse(ev.target.result); }
+      if(Array.isArray(dados)){ dbProdutos = dados.concat(dbProdutos); salvarDB(); renderizarDB(); alert(dados.length+' produtos importados'); }
+    }catch(err){ alert('Erro ao importar: '+err.message); }
+  };
+  if(file.name.endsWith('.csv')) reader.readAsText(file); else reader.readAsText(file);
+  e.target.value='';
+}
+
+// --- EDITOR (elementos originais) ---
+function trocarAba(aba){
+  document.getElementById('conteudoBanco').style.display = aba==='banco'?'block':'none';
+  document.getElementById('conteudoEditor').style.display = aba==='editor'?'block':'none';
+  document.getElementById('tabBanco').classList.toggle('ativo', aba==='banco');
+  document.getElementById('tabEditor').classList.toggle('ativo', aba==='editor');
+}
+
+function onDadosChange(){
+  dadosEtiqueta.codigo = document.getElementById('inputCodProduto').value;
+  dadosEtiqueta.descricao = document.getElementById('inputDescricao').value;
+  dadosEtiqueta.ean13 = document.getElementById('inputEAN13').value;
+  dadosEtiqueta.serie = document.getElementById('inputSerie').value;
+  dadosEtiqueta.data = document.getElementById('inputData').value;
+  renderizarTudo(); autoSalvar();
+}
+function atualizarDimensoes(){ renderizarTudo(); autoSalvar(); }
+
+function adicionarElemento(){
+  const tipo = document.getElementById('selectTipo').value;
+  const id = 'el_'+(idContador++);
+  let novo = {id, tipo, x:5, y:5, w:40, h:15, fontSize:11, bold:false, align:'left', conteudo:'', cor:'#000', espessura:2, imagem:''};
+  if(tipo==='texto'){ novo.conteudo='Texto livre'; novo.w=30; novo.h=10; }
+  if(tipo==='linha'){ novo.w=90; novo.h=2; novo.espessura=1; }
+  if(tipo==='imagem'){ elementoLogoTemp=id; document.getElementById('inputLogo').click(); return; }
+  elementos.push(novo); renderizarTudo(); autoSalvar();
+}
+function logoSelecionado(e){
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    if(elementoLogoTemp){
+      const id=elementoLogoTemp;
+      elementos.push({id, tipo:'imagem', x:5, y:5, w:25, h:15, fontSize:11, bold:false, align:'left', conteudo:'', cor:'#000', espessura:1, imagem:ev.target.result});
+      elementoLogoTemp=null; renderizarTudo(); autoSalvar();
+    } else {
+      // atualizar elemento existente via prompt? We'll handle in edit
+      const el = elementos.find(x=>x.id===window._editLogoId);
+      if(el){ el.imagem=ev.target.result; renderizarTudo(); }
+    }
+  };
+  reader.readAsDataURL(file); e.target.value='';
+}
+function removerElemento(id){ if(confirm('Remover elemento?')){ elementos=elementos.filter(e=>e.id!==id); renderizarTudo(); autoSalvar(); } }
+function atualizarElemento(id, campo, valor){
+  const el = elementos.find(e=>e.id===id); if(!el) return;
+  el[campo]=valor; renderizarTudo(); autoSalvar();
+}
+
+function renderizarLista(){
+  const container=document.getElementById('listaElementos');
+  container.innerHTML = elementos.map(el=> `
+    <div class="elemento-box">
+      <h4>${getLabel(el.tipo)} <button class="btn-remover" onclick="removerElemento('${el.id}')">X</button></h4>
+      <div class="row-inputs">
+        <div class="form-group"><label>X%</label><input type="number" value="${el.x}" oninput="atualizarElemento('${el.id}','x',parseFloat(this.value)||0)"></div>
+        <div class="form-group"><label>Y%</label><input type="number" value="${el.y}" oninput="atualizarElemento('${el.id}','y',parseFloat(this.value)||0)"></div>
+        <div class="form-group"><label>W%</label><input type="number" value="${el.w}" oninput="atualizarElemento('${el.id}','w',parseFloat(this.value)||0)"></div>
+        <div class="form-group"><label>H%</label><input type="number" value="${el.h}" oninput="atualizarElemento('${el.id}','h',parseFloat(this.value)||0)"></div>
+      </div>
+      ${el.tipo==='texto'?`<div class="form-group"><label>Conteúdo (use {codigo} {descricao} {ean} {serie} {data} {lote})</label><input value="${el.conteudo.replace(/"/g,'&quot;')}" oninput="atualizarElemento('${el.id}','conteudo',this.value)"></div>`:''}
+      ${el.tipo!=='linha' && el.tipo!=='imagem'?`
+      <div class="row-inputs">
+        <div class="form-group"><label>Fonte px</label><input type="number" value="${el.fontSize}" oninput="atualizarElemento('${el.id}','fontSize',parseInt(this.value)||10)"></div>
+        <div class="form-group"><label>Negrito</label><select onchange="atualizarElemento('${el.id}','bold',this.value==='1')"><option value="0" ${!el.bold?'selected':''}>Não</option><option value="1" ${el.bold?'selected':''}>Sim</option></select></div>
+        <div class="form-group"><label>Alinh.</label><select onchange="atualizarElemento('${el.id}','align',this.value)"><option value="left" ${el.align==='left'?'selected':''}>Esq</option><option value="center" ${el.align==='center'?'selected':''}>Cen</option><option value="right" ${el.align==='right'?'selected':''}>Dir</option></select></div>
+      </div>`:''}
+      ${el.tipo==='linha'?`<div class="form-group"><label>Espessura px</label><input type="number" value="${el.espessura}" oninput="atualizarElemento('${el.id}','espessura',parseInt(this.value)||1)"></div>`:''}
+    </div>
+  `).join('');
+}
+function getLabel(t){ const m={texto:'Texto Livre', codigo:'Código Produto', descricao:'Descrição', ean13:'EAN-13', code128:'CODE-128', qrcode:'QR Code', serie:'Nº Série', data:'Data', linha:'Linha', imagem:'Imagem/Logo'}; return m[t]||t; }
+
+function getValorElemento(el){
+  const map={codigo:dadosEtiqueta.codigo||'', descricao:dadosEtiqueta.descricao||'', ean13:dadosEtiqueta.ean13||'', serie:dadosEtiqueta.serie||'', data:dadosEtiqueta.data||'', lote:dadosEtiqueta.lote||''};
+  if(el.tipo==='texto'){
+    let txt = el.conteudo||'';
+    txt = txt.replace(/\{codigo\}/gi, map.codigo).replace(/\{descricao\}/gi, map.descricao).replace(/\{ean\}/gi, map.ean13).replace(/\{serie\}/gi, map.serie).replace(/\{data\}/gi, map.data).replace(/\{lote\}/gi, map.lote||'');
+    return txt;
+  }
+  if(map[el.tipo]!==undefined) return map[el.tipo];
+  if(el.tipo==='ean13' || el.tipo==='code128') return dadosEtiqueta.ean13||dadosEtiqueta.codigo||'1234567890123';
+  if(el.tipo==='qrcode') return (dadosEtiqueta.codigo+'|'+dadosEtiqueta.ean13+'|'+dadosEtiqueta.serie);
+  return '';
+}
+
+function renderizarTudo(){
+  const w = parseFloat(document.getElementById('inputWidth').value)||100;
+  const h = parseFloat(document.getElementById('inputHeight').value)||75;
+  const etiqueta = document.getElementById('etiqueta');
+  const pxPerMm = 3.8;
+  etiqueta.style.width = (w*pxPerMm)+'px';
+  etiqueta.style.height = (h*pxPerMm)+'px';
+
+  etiqueta.innerHTML = elementos.map(el=>{
+    const val = getValorElemento(el);
+    let inner='';
+    if(el.tipo==='imagem'){
+      inner=`<img class="preview-img" src="${el.imagem||'https://via.placeholder.com/120x60?text=LOGO'}">`;
+    } else if(el.tipo==='ean13'){
+      inner=`<div class="preview-ean13"><svg id="barcode_${el.id}"></svg><div style="font-size:9px;font-family:monospace">${val}</div></div>`;
+    } else if(el.tipo==='code128'){
+      inner=`<div class="preview-barcode"><svg id="barcode_${el.id}"></svg><div style="font-size:9px;font-family:monospace">${val}</div></div>`;
+    } else if(el.tipo==='qrcode'){
+      inner=`<div id="qr_${el.id}" class="preview-barcode"></div>`;
+    } else if(el.tipo==='linha'){
+      inner=`<div class="preview-linha"><div class="linha-interna" style="width:100%;height:${el.espessura}px;background:#000"></div></div>`;
+    } else {
+      inner=`<div class="preview-text" style="font-size:${el.fontSize}px;font-weight:${el.bold?'bold':'normal'};text-align:${el.align};justify-content:${el.align==='center'?'center':el.align==='right'?'flex-end':'flex-start'}">${val||el.conteudo||''}</div>`;
+    }
+    return `<div class="etiqueta-item-preview" data-id="${el.id}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%">${inner}</div>`;
+  }).join('');
+
+  // JsBarcode
+  elementos.forEach(el=>{
+    if(el.tipo==='ean13' || el.tipo==='code128'){
+      try{
+        const svg = document.getElementById('barcode_'+el.id);
+        if(svg){
+          const v = getValorElemento(el)||'1234567890128';
+          JsBarcode(svg, v, {format: el.tipo==='ean13'?'ean13':'code128', displayValue:false, height: el.h*2.5, width:1.2, margin:0});
+        }
+      }catch(e){}
+    }
+    if(el.tipo==='qrcode'){
+      try{
+        const div = document.getElementById('qr_'+el.id);
+        if(div){ div.innerHTML=''; new QRCode(div, {text:getValorElemento(el)||'test', width: el.w*3, height: el.h*3}); }
+      }catch(e){}
+    }
+  });
+
+  renderizarLista();
+  initInteract();
+
+  // Lote preview se aberto
+  if(document.getElementById('areaLote').style.display!=='none') renderizarLotePreview();
+}
+
+function initInteract(){
+  interact('.etiqueta-item-preview').draggable({
+    modifiers: [interact.modifiers.restrictRect({restriction:'parent'})],
+    listeners:{
+      move(ev){
+        const target=ev.target; const id=target.getAttribute('data-id'); const el=elementos.find(e=>e.id===id); if(!el) return;
+        const parent = document.getElementById('etiqueta');
+        const dx = (ev.dx / parent.offsetWidth)*100;
+        const dy = (ev.dy / parent.offsetHeight)*100;
+        el.x+=dx; el.y+=dy;
+        target.style.left=el.x+'%'; target.style.top=el.y+'%';
+      },
+      end(){ autoSalvar(); renderizarLista(); }
+    }
+  }).resizable({
+    edges:{left:true,right:true,bottom:true,top:true},
+    modifiers:[interact.modifiers.restrictSize({min:{width:10,height:10}})],
+    listeners:{
+      move(ev){
+        const target=ev.target; const id=target.getAttribute('data-id'); const el=elementos.find(e=>e.id===id); if(!el) return;
+        const parent = document.getElementById('etiqueta');
+        el.w = (ev.rect.width / parent.offsetWidth)*100;
+        el.h = (ev.rect.height / parent.offsetHeight)*100;
+        el.x = (ev.rect.left - parent.getBoundingClientRect().left)/parent.offsetWidth*100;
+        el.y = (ev.rect.top - parent.getBoundingClientRect().top)/parent.offsetHeight*100;
+        target.style.width=el.w+'%'; target.style.height=el.h+'%';
+        target.style.left=el.x+'%'; target.style.top=el.y+'%';
+      },
+      end(){ autoSalvar(); renderizarLista(); renderizarTudo(); }
+    }
+  });
+  // duplo clique edita texto
+  document.querySelectorAll('.etiqueta-item-preview').forEach(div=>{
+    div.ondblclick=()=>{
+      const id=div.getAttribute('data-id'); const el=elementos.find(e=>e.id===id);
+      if(el && el.tipo==='texto'){
+        const novo=prompt('Editar texto (use {codigo} {descricao} {ean} {serie} {data} {lote}):', el.conteudo);
+        if(novo!==null){ el.conteudo=novo; renderizarTudo(); autoSalvar(); }
+      }
+    };
+  });
+}
+
+function autoSalvar(){
+  const estado={elementos,idContador,dadosEtiqueta,largura:document.getElementById('inputWidth').value,altura:document.getElementById('inputHeight').value,versao:'4.0',data:new Date().toISOString()};
+  localStorage.setItem(LAYOUT_KEY, JSON.stringify(estado));
+  document.getElementById('statusSave').innerText='Salvo automaticamente '+new Date().toLocaleTimeString('pt-BR');
+}
+function salvarTudo(){ autoSalvar(); document.getElementById('btnSalvar').classList.add('salvo'); document.getElementById('btnSalvar').innerText='✅ Salvo!'; setTimeout(()=>{document.getElementById('btnSalvar').classList.remove('salvo'); document.getElementById('btnSalvar').innerText='💾 Salvar Layout';},1500); }
+function exportarConfig(){
+  const estado={elementos,idContador,dadosEtiqueta,largura:document.getElementById('inputWidth').value,altura:document.getElementById('inputHeight').value};
+  const blob=new Blob([JSON.stringify(estado,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='etiqueta_layout_'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+}
+function importarConfig(e){
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader(); reader.onload=ev=>{
+    try{
+      const est=JSON.parse(ev.target.result);
+      if(est.elementos){ elementos=est.elementos; idContador=est.idContador||100; if(est.dadosEtiqueta) dadosEtiqueta=est.dadosEtiqueta;
+        if(est.largura) document.getElementById('inputWidth').value=est.largura;
+        if(est.altura) document.getElementById('inputHeight').value=est.altura;
+        document.getElementById('inputCodProduto').value=dadosEtiqueta.codigo||'';
+        document.getElementById('inputDescricao').value=dadosEtiqueta.descricao||'';
+        document.getElementById('inputEAN13').value=dadosEtiqueta.ean13||'';
+        document.getElementById('inputSerie').value=dadosEtiqueta.serie||'';
+        document.getElementById('inputData').value=dadosEtiqueta.data||'';
+        renderizarTudo(); alert('Layout importado com '+elementos.length+' elementos'); }
+    }catch(err){ alert('Erro: '+err.message); }
+  }; reader.readAsText(file); e.target.value='';
+}
+
+// LOTE
+function abrirLote(){
+  const selecionados = prompt('Digite os códigos separados por vírgula ou deixe vazio para abrir seletor visual.\nEx: ELG-PCB-8821,MOT-WEG-15CV\n\nDeixe vazio e clique OK para abrir grade visual:');
+  if(selecionados===null) return;
+  if(selecionados.trim()){
+    const cods = selecionados.split(',').map(s=>s.trim().toUpperCase());
+    loteSelecionados = dbProdutos.filter(p=> cods.includes(p.codigo.toUpperCase()));
+  } else {
+    // abre modal visual simples: seleciona todos?
+    const todos = confirm('Selecionar TODOS os '+dbProdutos.length+' produtos do banco para o lote?\n\nOK = Todos\nCancelar = Escolher manualmente (será aberto um checklist)');
+    if(todos){ loteSelecionados = [...dbProdutos]; }
+    else {
+      // checklist via prompt ainda, mas vamos abrir area lote e renderizar checkboxes
+      loteSelecionados = [...dbProdutos];
+      renderizarSeletorLote();
+      return;
+    }
+  }
+  renderizarLote();
+}
+function renderizarSeletorLote(){
+  const area = document.getElementById('areaLote');
+  const grid = document.getElementById('gridLote');
+  area.style.display='block';
+  document.getElementById('etiqueta').style.display='none';
+  grid.innerHTML = dbProdutos.map(p=> `<label style="font-size:11px;display:flex;gap:6px;align-items:center;border:1px solid #ddd;padding:6px;border-radius:4px"><input type="checkbox" checked value="${p.id}" class="chkLote"> ${p.codigo} - ${p.descricao.slice(0,30)}</label>`).join('') + `<div style="grid-column:1/-1;display:flex;gap:6px"><button class="btn-save" onclick="confirmarLote()">Confirmar Seleção</button><button class="btn-add" style="background:#6c757d" onclick="fecharLote()">Cancelar</button></div>`;
+}
+function confirmarLote(){
+  const checks = document.querySelectorAll('.chkLote:checked');
+  loteSelecionados = Array.from(checks).map(c=> dbProdutos.find(p=>p.id===c.value)).filter(Boolean);
+  renderizarLote();
+}
+function renderizarLote(){
+  const area = document.getElementById('areaLote');
+  const grid = document.getElementById('gridLote');
+  area.style.display='block';
+  document.getElementById('etiqueta').style.display='none';
+  document.getElementById('infoAutoPrint').style.display='none';
+  grid.innerHTML='';
+  // expandir por qtd
+  let expandido=[...loteSelecionados];
+  expandido.forEach(p=>{
+    const w = document.getElementById('inputWidth').value;
+    const h = document.getElementById('inputHeight').value;
+    const div = document.createElement('div');
+    div.style.border='1px dashed #999';
+    div.style.width='100%';
+    div.style.height=(h*3)+'px';
+    div.style.position='relative';
+    div.style.background='#fff';
+    div.innerHTML = elementos.map(el=>{
+      const dadosTemp = {codigo:p.codigo, descricao:p.descricao, ean13:p.ean, serie:p.serie, data:p.data, lote:p.lote};
+      let val='';
+      if(el.tipo==='texto'){ val = (el.conteudo||'').replace(/\{codigo\}/gi,dadosTemp.codigo).replace(/\{descricao\}/gi,dadosTemp.descricao).replace(/\{ean\}/gi,dadosTemp.ean13).replace(/\{serie\}/gi,dadosTemp.serie).replace(/\{data\}/gi,dadosTemp.data).replace(/\{lote\}/gi,dadosTemp.lote||''); }
+      else if(dadosTemp[el.tipo]!==undefined) val=dadosTemp[el.tipo];
+      else if(el.tipo==='ean13'||el.tipo==='code128') val=dadosTemp.ean13||dadosTemp.codigo;
+      else if(el.tipo==='qrcode') val=dadosTemp.codigo+'|'+dadosTemp.ean13;
+      else val=el.conteudo;
+      if(el.tipo==='linha') return `<div style="position:absolute;left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.espessura}px;background:#000"></div>`;
+      if(el.tipo==='ean13'||el.tipo==='code128') return `<div style="position:absolute;left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;font-family:monospace;font-size:8px;border:1px solid #000;display:flex;align-items:center;justify-content:center">${val}</div>`;
+      if(el.tipo==='imagem') return `<div style="position:absolute;left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;"><img src="${el.imagem}" style="width:100%;height:100%;object-fit:contain"></div>`;
+      return `<div style="position:absolute;left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;font-size:${el.fontSize*0.7}px;font-weight:${el.bold?'bold':'normal'};text-align:${el.align};overflow:hidden">${val}</div>`;
+    }).join('');
+    grid.appendChild(div);
+  });
+}
+function renderizarLotePreview(){ if(loteSelecionados.length) renderizarLote(); }
+function fecharLote(){ document.getElementById('areaLote').style.display='none'; document.getElementById('etiqueta').style.display='block'; document.getElementById('infoAutoPrint').style.display='block'; }
+function imprimirLote(){ window.print(); }
+
+window.onload=()=>{
+  carregarDB();
+  if(document.getElementById('db_data')) document.getElementById('db_data').value = new Date().toISOString().slice(0,10);
+  document.getElementById('inputData').value = new Date().toISOString().slice(0,10);
+  renderizarDB();
+  try{
+    const raw = localStorage.getItem(LAYOUT_KEY);
+    if(raw){
+      const est = JSON.parse(raw);
+      if(est.elementos && est.elementos.length){ elementos=est.elementos; idContador=est.idContador||100; if(est.dadosEtiqueta) dadosEtiqueta=est.dadosEtiqueta;
+        if(est.largura) document.getElementById('inputWidth').value=est.largura;
+        if(est.altura) document.getElementById('inputHeight').value=est.altura;
+        document.getElementById('inputCodProduto').value=dadosEtiqueta.codigo||'';
+        document.getElementById('inputDescricao').value=dadosEtiqueta.descricao||'';
+        document.getElementById('inputEAN13').value=dadosEtiqueta.ean13||'';
+        document.getElementById('inputSerie').value=dadosEtiqueta.serie||'';
+        document.getElementById('inputData').value=dadosEtiqueta.data||'';
+      }
+    }
+  }catch(e){}
+  if(elementos.length===0){
+    elementos=[
+      {id:'el_1', tipo:'codigo', x:4, y:5, w:55, h:12, fontSize:12, bold:true, align:'left', conteudo:'', cor:'#000', espessura:1, imagem:''},
+      {id:'el_2', tipo:'descricao', x:4, y:19, w:90, h:14, fontSize:9, bold:false, align:'left', conteudo:'', cor:'#000', espessura:1, imagem:''},
+      {id:'el_3', tipo:'ean13', x:4, y:36, w:58, h:28, fontSize:9, bold:false, align:'center', conteudo:'', cor:'#000', espessura:1, imagem:''},
+      {id:'el_4', tipo:'serie', x:65, y:36, w:30, h:10, fontSize:8, bold:false, align:'left', conteudo:'', cor:'#000', espessura:1, imagem:''},
+      {id:'el_5', tipo:'data', x:65, y:48, w:30, h:8, fontSize:7, bold:false, align:'left', conteudo:'', cor:'#000', espessura:1, imagem:''},
+      {id:'el_6', tipo:'linha', x:4, y:68, w:90, h:1, fontSize:10, bold:false, align:'left', conteudo:'', cor:'#000', espessura:1, imagem:''},
+      {id:'el_7', tipo:'texto', x:4, y:71, w:90, h:8, fontSize:7, bold:false, align:'left', conteudo:'Lote: {lote} | Cliente: {codigo}', cor:'#000', espessura:1, imagem:''},
+    ];
+  }
+  renderizarTudo();
+  setInterval(autoSalvar, 3000);
+};
+</script>
+</body>
+</html>
