@@ -553,6 +553,89 @@ function autoSalvar(){
 }
 function salvarTudo(){ autoSalvar(); const b=document.getElementById('btnSalvar'); b.classList.add('salvo'); b.innerText='✅ Salvo!'; setTimeout(()=>{b.classList.remove('salvo'); b.innerText='💾 Salvar Layout';},1500); }
 
+
+function exportarConfig(){
+  try{
+    const estado={elementos,idContador,dadosEtiqueta,largura:document.getElementById('inputWidth').value,altura:document.getElementById('inputHeight').value,versao:'6.0',data:new Date().toISOString()};
+    const blob=new Blob([JSON.stringify(estado,null,2)],{type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='etiqueta_layout_'+(dadosEtiqueta.ordem||'layout')+'_'+new Date().toISOString().slice(0,10)+'.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+    const s=document.getElementById('statusSave');
+    if(s) s.innerText='✅ Layout exportado!';
+  }catch(e){ alert('Erro ao exportar: '+e.message); }
+}
+function importarConfig(e){
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const est=JSON.parse(ev.target.result);
+      if(!est.elementos || !Array.isArray(est.elementos)){ throw new Error('Arquivo não é um layout válido'); }
+      if(!confirm('Importar layout com '+est.elementos.length+' elementos? O layout atual e as informações serão substituídos.')){ e.target.value=''; return; }
+      elementos=est.elementos;
+      idContador=est.idContador||200;
+      if(est.dadosEtiqueta){ 
+        dadosEtiqueta={...dadosEtiqueta,...est.dadosEtiqueta}; 
+        // ATUALIZA TODOS OS CAMPOS DA TELA DE PRODUÇÃO
+        const d=dadosEtiqueta;
+        const setVal=(id,val)=>{ const el=document.getElementById(id); if(el) el.value=val||''; };
+        setVal('prod_codigo', d.codigo);
+        setVal('prod_descricao', d.descricao);
+        setVal('prod_ordem', d.ordem);
+        setVal('prod_qtd', d.qtd);
+        setVal('prod_data_prod', d.data_producao);
+        setVal('prod_hora_prod', d.hora_producao);
+        setVal('prod_resp_prod', d.resp_producao);
+        setVal('prod_data_insp', d.data_inspecao);
+        setVal('prod_hora_insp', d.hora_inspecao);
+        setVal('prod_resp_insp', d.resp_inspecao);
+        setVal('inputWidth', est.largura);
+        setVal('inputHeight', est.altura);
+        // Atualiza aviso de vinculado
+        if(d.codigo){
+          const prod = dbProdutos.find(p=>p.codigo.toUpperCase()===(d.codigo||'').toUpperCase());
+          if(prod){
+            produtoVinculadoId=prod.id;
+            const av=document.getElementById('avisoProducao');
+            const av2=document.getElementById('avisoVinculo');
+            const txt=document.getElementById('prodVinculadoTxt');
+            const txt2=document.getElementById('vinculoNome');
+            if(av) av.style.display='block';
+            if(av2) av2.style.display='block';
+            if(txt) txt.innerText=prod.codigo+' - '+prod.descricao;
+            if(txt2) txt2.innerText=prod.codigo;
+          }
+        }
+        // Atualiza status
+        const st=document.getElementById('statusProdCodigo');
+        if(st) st.innerHTML='<span class="status-ok">✅ Informações importadas do layout</span>';
+      }
+      if(est.largura) document.getElementById('inputWidth').value=est.largura;
+      if(est.altura) document.getElementById('inputHeight').value=est.altura;
+      renderizarTudo();
+      renderizarDB();
+      autoSalvar();
+      // Vai para a tela de produção para ver as informações
+      trocarAba('producao');
+      alert('✅ Layout importado com '+elementos.length+' elementos! Informações da etiqueta atualizadas.');
+    }catch(err){ alert('Erro ao importar layout: '+err.message); console.error(err); }
+    e.target.value='';
+  };
+  reader.onerror=()=>{ alert('Erro ao ler arquivo'); e.target.value=''; };
+  reader.readAsText(file);
+}
+function adicionarElementoPorTipo(tipo){
+  const sel=document.getElementById('selectTipo');
+  if(sel) sel.value=tipo;
+  adicionarElemento();
+}
+
+
 window.onload=()=>{
   carregarDB(); renderizarDB(); renderizarOrdens();
   const hoje=new Date().toISOString().slice(0,10);
