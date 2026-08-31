@@ -131,7 +131,14 @@ body{background:#f4f6f9;display:flex;height:100vh;overflow:hidden}
         <div class="form-group"><label>Data Produção *</label><input id="prod_data_prod" type="date" oninput="onProdChange()"></div>
         <div class="form-group"><label>Hora Produção *</label><input id="prod_hora_prod" type="time" oninput="onProdChange()"></div>
       </div>
-      <div class="form-group"><label>Responsável Produção *</label><input id="prod_resp_prod" placeholder="Nome do operador" oninput="onProdChange()" list="listaOperadores"></div>
+      <div class="form-group">
+        <label>Responsável Produção *</label>
+        <div style="display:flex;gap:6px">
+          <input id="prod_resp_prod" placeholder="Selecione ou digite" oninput="onProdChange()" list="listaOperadores" style="flex:1">
+          <button type="button" style="padding:7px 12px;background:#fd7e14;color:white;border:none;border-radius:5px;cursor:pointer;font-weight:700;font-size:11px;white-space:nowrap" onclick="abrirCadastroResp('producao')">+ CADASTRAR</button>
+        </div>
+      </div>
+      <div id="listaRespProd" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px"></div>
     </div>
 
     <div class="card-prod" style="border-color:#198754">
@@ -140,15 +147,32 @@ body{background:#f4f6f9;display:flex;height:100vh;overflow:hidden}
         <div class="form-group"><label>Data Inspeção</label><input id="prod_data_insp" type="date" oninput="onProdChange()"></div>
         <div class="form-group"><label>Hora Inspeção</label><input id="prod_hora_insp" type="time" oninput="onProdChange()"></div>
       </div>
-      <div class="form-group"><label>Responsável Inspeção</label><input id="prod_resp_insp" placeholder="Nome do inspetor" oninput="onProdChange()" list="listaInspetores"></div>
+      <div class="form-group">
+        <label>Responsável Inspeção</label>
+        <div style="display:flex;gap:6px">
+          <input id="prod_resp_insp" placeholder="Selecione ou digite" oninput="onProdChange()" list="listaInspetores" style="flex:1">
+          <button type="button" style="padding:7px 12px;background:#198754;color:white;border:none;border-radius:5px;cursor:pointer;font-weight:700;font-size:11px;white-space:nowrap" onclick="abrirCadastroResp('inspecao')">+ CADASTRAR</button>
+        </div>
+      </div>
+      <div id="listaRespInsp" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px"></div>
     </div>
 
-    <datalist id="listaOperadores">
-      <option value="João Silva"><option value="Maria Santos"><option value="Carlos Oliveira"><option value="Ana Pereira">
-    </datalist>
-    <datalist id="listaInspetores">
-      <option value="Qualidade - Turno A"><option value="Qualidade - Turno B"><option value="José Qualidade"><option value="Patrícia QA">
-    </datalist>
+    <datalist id="listaOperadores"></datalist>
+    <datalist id="listaInspetores"></datalist>
+
+    <!-- MODAL CADASTRO RESPONSÁVEIS -->
+    <div id="modalResp" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center">
+      <div style="background:white;border-radius:10px;padding:16px;width:90%;max-width:420px;box-shadow:0 8px 24px rgba(0,0,0,0.3)">
+        <h3 id="modalRespTitulo" style="font-size:13px;margin-bottom:10px;color:#0d6efd">Cadastrar Responsável</h3>
+        <div class="form-group"><label>Tipo</label><select id="modalRespTipo" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:5px"><option value="producao">Produção</option><option value="inspecao">Inspeção</option></select></div>
+        <div class="form-group"><label>Nome *</label><input id="modalRespNome" placeholder="Ex: Atila Almeida" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:5px"></div>
+        <div id="modalRespLista" style="max-height:160px;overflow:auto;margin:10px 0;border:1px solid #eee;border-radius:6px;padding:6px"></div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button style="flex:1;padding:10px;background:#198754;color:white;border:none;border-radius:6px;font-weight:700;cursor:pointer" onclick="salvarNovoResp()">💾 Salvar</button>
+          <button style="flex:1;padding:10px;background:#6c757d;color:white;border:none;border-radius:6px;font-weight:700;cursor:pointer" onclick="fecharCadastroResp()">Fechar</button>
+        </div>
+      </div>
+    </div>
 
     <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:8px;margin:10px 0;font-size:10px">
       <b>Variáveis disponíveis no Editor:</b><br>
@@ -636,8 +660,136 @@ function adicionarElementoPorTipo(tipo){
 }
 
 
+
+// --- GERENCIAMENTO DE RESPONSÁVEIS ---
+const RESP_PROD_KEY='etiquetas_resp_prod_v1';
+const RESP_INSP_KEY='etiquetas_resp_insp_v1';
+let responsaveisProd = [];
+let responsaveisInsp = [];
+
+function carregarResponsaveis(){
+  try{
+    const rp = localStorage.getItem(RESP_PROD_KEY);
+    const ri = localStorage.getItem(RESP_INSP_KEY);
+    if(rp){ responsaveisProd = JSON.parse(rp); }
+    if(ri){ responsaveisInsp = JSON.parse(ri); }
+  }catch(e){}
+  if(responsaveisProd.length===0){
+    responsaveisProd = ["Atila Almeida","Áurea Cabral","Lea Santos","Cristiani Fenelon","Rita Cássia"];
+    salvarResponsaveisProd();
+  }
+  if(responsaveisInsp.length===0){
+    responsaveisInsp = ["Qualidade - Turno A","Qualidade - Turno B","José Qualidade","Patrícia QA"];
+    salvarResponsaveisInsp();
+  }
+  renderizarDatalistsResp();
+}
+
+function salvarResponsaveisProd(){ localStorage.setItem(RESP_PROD_KEY, JSON.stringify(responsaveisProd)); renderizarDatalistsResp(); }
+function salvarResponsaveisInsp(){ localStorage.setItem(RESP_INSP_KEY, JSON.stringify(responsaveisInsp)); renderizarDatalistsResp(); }
+
+function renderizarDatalistsResp(){
+  const dlProd = document.getElementById('listaOperadores');
+  const dlInsp = document.getElementById('listaInspetores');
+  if(dlProd) dlProd.innerHTML = responsaveisProd.map(n=>`<option value="${n}">`).join('');
+  if(dlInsp) dlInsp.innerHTML = responsaveisInsp.map(n=>`<option value="${n}">`).join('');
+  
+  // Renderiza chips visuais
+  const divProd = document.getElementById('listaRespProd');
+  const divInsp = document.getElementById('listaRespInsp');
+  if(divProd){
+    divProd.innerHTML = responsaveisProd.map((n,i)=>`<span style="background:#fff3cd;border:1px solid #fd7e14;border-radius:12px;padding:3px 8px;font-size:10px;display:flex;align-items:center;gap:4px">${n} <button onclick="removerResp('producao',${i})" style="background:#dc3545;color:white;border:none;border-radius:50%;width:16px;height:16px;font-size:10px;cursor:pointer;line-height:1">x</button></span>`).join('');
+  }
+  if(divInsp){
+    divInsp.innerHTML = responsaveisInsp.map((n,i)=>`<span style="background:#d1e7dd;border:1px solid #198754;border-radius:12px;padding:3px 8px;font-size:10px;display:flex;align-items:center;gap:4px">${n} <button onclick="removerResp('inspecao',${i})" style="background:#dc3545;color:white;border:none;border-radius:50%;width:16px;height:16px;font-size:10px;cursor:pointer;line-height:1">x</button></span>`).join('');
+  }
+  renderizarModalLista();
+}
+
+function abrirCadastroResp(tipo){
+  document.getElementById('modalRespTipo').value = tipo;
+  document.getElementById('modalRespTitulo').innerText = tipo==='producao' ? '🏭 Cadastrar Responsável Produção' : '✅ Cadastrar Responsável Inspeção';
+  document.getElementById('modalRespNome').value = '';
+  document.getElementById('modalResp').style.display='flex';
+  document.getElementById('modalRespNome').focus();
+  renderizarModalLista();
+}
+
+function fecharCadastroResp(){
+  document.getElementById('modalResp').style.display='none';
+}
+
+function renderizarModalLista(){
+  const tipo = document.getElementById('modalRespTipo')?.value || 'producao';
+  const lista = tipo==='producao' ? responsaveisProd : responsaveisInsp;
+  const div = document.getElementById('modalRespLista');
+  if(!div) return;
+  if(lista.length===0){
+    div.innerHTML='<div style="font-size:11px;color:#888;text-align:center;padding:10px">Nenhum cadastrado</div>';
+    return;
+  }
+  div.innerHTML = lista.map((n,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px;border-bottom:1px solid #f1f1f1;font-size:11px"><span>${n}</span><span style="display:flex;gap:4px"><button onclick="usarResp('${tipo}','${n.replace(/'/g,"\'")}')" style="background:#0d6efd;color:white;border:none;border-radius:4px;padding:2px 6px;font-size:10px;cursor:pointer">Usar</button><button onclick="removerResp('${tipo}',${i})" style="background:#dc3545;color:white;border:none;border-radius:4px;padding:2px 6px;font-size:10px;cursor:pointer">X</button></span></div>`).join('');
+}
+
+function salvarNovoResp(){
+  const tipo = document.getElementById('modalRespTipo').value;
+  const nome = document.getElementById('modalRespNome').value.trim();
+  if(!nome){ alert('Digite o nome'); return; }
+  if(tipo==='producao'){
+    if(responsaveisProd.some(r=>r.toUpperCase()===nome.toUpperCase())){ alert('Já cadastrado!'); return; }
+    responsaveisProd.push(nome);
+    responsaveisProd.sort();
+    salvarResponsaveisProd();
+    document.getElementById('prod_resp_prod').value = nome;
+    dadosEtiqueta.resp_producao = nome;
+    renderizarTudo();
+  }else{
+    if(responsaveisInsp.some(r=>r.toUpperCase()===nome.toUpperCase())){ alert('Já cadastrado!'); return; }
+    responsaveisInsp.push(nome);
+    responsaveisInsp.sort();
+    salvarResponsaveisInsp();
+    document.getElementById('prod_resp_insp').value = nome;
+    dadosEtiqueta.resp_inspecao = nome;
+    renderizarTudo();
+  }
+  document.getElementById('modalRespNome').value='';
+  renderizarModalLista();
+  // Não fecha automaticamente para cadastrar vários
+}
+
+function removerResp(tipo, idx){
+  if(!confirm('Remover este responsável?')) return;
+  if(tipo==='producao'){
+    responsaveisProd.splice(idx,1);
+    salvarResponsaveisProd();
+  }else{
+    responsaveisInsp.splice(idx,1);
+    salvarResponsaveisInsp();
+  }
+}
+
+function usarResp(tipo, nome){
+  if(tipo==='producao'){
+    document.getElementById('prod_resp_prod').value = nome;
+    dadosEtiqueta.resp_producao = nome;
+  }else{
+    document.getElementById('prod_resp_insp').value = nome;
+    dadosEtiqueta.resp_inspecao = nome;
+  }
+  renderizarTudo();
+  fecharCadastroResp();
+  onProdChange();
+}
+
+// Atualiza lista no modal quando muda tipo
+document.addEventListener('DOMContentLoaded', ()=>{
+  const sel=document.getElementById('modalRespTipo');
+  if(sel) sel.addEventListener('change', renderizarModalLista);
+});
+
+
 window.onload=()=>{
-  carregarDB(); renderizarDB(); renderizarOrdens();
+  carregarDB(); carregarResponsaveis(); renderizarDB(); renderizarOrdens();
   const hoje=new Date().toISOString().slice(0,10);
   const agora=new Date().toTimeString().slice(0,5);
   if(!document.getElementById('prod_data_prod').value) document.getElementById('prod_data_prod').value=hoje;
