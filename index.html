@@ -204,8 +204,13 @@ body{background:#f4f6f9;display:flex;height:100vh;overflow:hidden}
     </div>
 
     <button class="btn-save" id="btnSalvar" onclick="salvarTudo()">💾 Salvar Layout</button>
-    <div id="statusSave" style="font-size:10px;color:#666;margin-top:4px"></div>
-    <button class="print-btn" onclick="window.print()">🖨️ IMPRIMIR SOMENTE ETIQUETA</button>
+    <div class="row-inputs" style="margin-top:2px">
+      <button class="btn-save" style="background:#6c757d;flex:1" onclick="exportarConfig()">Exportar Layout</button>
+      <button class="btn-save" style="background:#6c757d;flex:1" onclick="document.getElementById('importLayout').click()">Importar Layout</button>
+      <input type="file" id="importLayout" accept=".json" style="display:none" onchange="importarConfig(event)">
+    </div>
+    <div id="statusSave" style="font-size:10px;color:#666;margin-top:4px">Salvo automaticamente --:--</div>
+    <button class="print-btn" onclick="window.print()">🖨️ IMPRIMIR ETIQUETA ATUAL</button>
   </div>
 </div>
 
