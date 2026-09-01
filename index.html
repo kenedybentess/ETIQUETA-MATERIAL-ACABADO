@@ -233,7 +233,7 @@ body{background:#f4f6f9;display:flex;height:100vh;overflow:hidden}
       <div class="form-group"><label>Largura mm</label><input type="number" id="inputWidth" value="100" onchange="atualizarDimensoes()"></div>
       <div class="form-group"><label>Altura mm</label><input type="number" id="inputHeight" value="70" onchange="atualizarDimensoes()"></div>
     </div>
-    <h3 style="margin-top:8px">↔️ Margens (mm)</h3>
+    <h3 style="margin-top:8px">↔️ Margens Internas (mm) - move conteúdo, mantém tamanho</h3>
     <div class="row-inputs">
       <div class="form-group"><label>Esquerda</label><input type="number" id="inputMarginLeft" value="2" min="0" step="0.5" onchange="atualizarDimensoes()"></div>
       <div class="form-group"><label>Direita</label><input type="number" id="inputMarginRight" value="2" min="0" step="0.5" onchange="atualizarDimensoes()"></div>
@@ -868,7 +868,12 @@ function renderizarTudo(){
   etiqueta.style.height=(h*pxPerMm)+'px';
   etiqueta.style.boxSizing='border-box';
   etiqueta.style.position='relative';
+  etiqueta.style.margin='0';
   etiqueta.style.padding='0';
+
+  // Área útil para posicionamento (margens empurram, mas não redimensionam)
+  const usableW = Math.max(0, w - ml - mr);
+  const usableH = Math.max(0, h - mt - mb);
 
   const elementosHtml = elementos.map(el=>{
     const val=getValorElemento(el);
@@ -879,21 +884,25 @@ function renderizarTudo(){
     else if(el.tipo==='qrcode'){ inner=`<div id="qr_${el.id}" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center"></div>`; }
     else if(el.tipo==='linha'){ inner=`<div style="width:100%;height:100%;display:flex;align-items:center"><div class="linha-interna" style="width:100%;height:${el.espessura}px;background:#000"></div></div>`; }
     else { inner=`<div class="preview-text" style="font-size:${el.fontSize}px;font-weight:${el.bold?'bold':'normal'};text-align:${el.align};justify-content:${el.align==='center'?'center':el.align==='right'?'flex-end':'flex-start'}">${val}</div>`; }
-    return `<div class="etiqueta-item-preview" data-id="${el.id}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%">${inner}</div>`;
+
+    // Margem mexe na posição, mas tamanho continua igual (baseado no tamanho total da etiqueta)
+    const leftPx = (ml + (el.x/100)*usableW) * pxPerMm;
+    const topPx = (mt + (el.y/100)*usableH) * pxPerMm;
+    const widthPx = (el.w/100)*w*pxPerMm;
+    const heightPx = (el.h/100)*h*pxPerMm;
+
+    return `<div class="etiqueta-item-preview" data-id="${el.id}" data-x="${el.x}" data-y="${el.y}" style="left:${leftPx}px;top:${topPx}px;width:${widthPx}px;height:${heightPx}px">${inner}</div>`;
   }).join('');
 
   const guias = (ml||mr||mt||mb) ? `
-    <div style="position:absolute;left:0;top:0;bottom:0;width:${ml*pxPerMm}px;background:repeating-linear-gradient(45deg, rgba(255,193,7,0.15), rgba(255,193,7,0.15) 6px, rgba(255,193,7,0.05) 6px, rgba(255,193,7,0.05) 12px);border-right:1px dashed #ffc107;pointer-events:none;z-index:1"></div>
-    <div style="position:absolute;right:0;top:0;bottom:0;width:${mr*pxPerMm}px;background:repeating-linear-gradient(45deg, rgba(255,193,7,0.15), rgba(255,193,7,0.15) 6px, rgba(255,193,7,0.05) 6px, rgba(255,193,7,0.05) 12px);border-left:1px dashed #ffc107;pointer-events:none;z-index:1"></div>
-    <div style="position:absolute;left:0;right:0;top:0;height:${mt*pxPerMm}px;background:repeating-linear-gradient(45deg, rgba(255,193,7,0.15), rgba(255,193,7,0.15) 6px, rgba(255,193,7,0.05) 6px, rgba(255,193,7,0.05) 12px);border-bottom:1px dashed #ffc107;pointer-events:none;z-index:1"></div>
-    <div style="position:absolute;left:0;right:0;bottom:0;height:${mb*pxPerMm}px;background:repeating-linear-gradient(45deg, rgba(255,193,7,0.15), rgba(255,193,7,0.15) 6px, rgba(255,193,7,0.05) 6px, rgba(255,193,7,0.05) 12px);border-top:1px dashed #ffc107;pointer-events:none;z-index:1"></div>
-    <div style="position:absolute; left:${ml*pxPerMm}px; top:${mt*pxPerMm}px; right:${mr*pxPerMm}px; bottom:${mb*pxPerMm}px; border:1px dashed rgba(13,110,253,0.4); pointer-events:none; z-index:2"></div>
+    <div style="position:absolute;left:0;top:0;bottom:0;width:${ml*pxPerMm}px;background:repeating-linear-gradient(45deg, rgba(255,193,7,0.12), rgba(255,193,7,0.12) 6px, rgba(255,193,7,0.03) 6px, rgba(255,193,7,0.03) 12px);border-right:1px dashed #ffc107;pointer-events:none;z-index:1"></div>
+    <div style="position:absolute;right:0;top:0;bottom:0;width:${mr*pxPerMm}px;background:repeating-linear-gradient(45deg, rgba(255,193,7,0.12), rgba(255,193,7,0.12) 6px, rgba(255,193,7,0.03) 6px, rgba(255,193,7,0.03) 12px);border-left:1px dashed #ffc107;pointer-events:none;z-index:1"></div>
+    <div style="position:absolute;left:0;right:0;top:0;height:${mt*pxPerMm}px;background:repeating-linear-gradient(45deg, rgba(255,193,7,0.12), rgba(255,193,7,0.12) 6px, rgba(255,193,7,0.03) 6px, rgba(255,193,7,0.03) 12px);border-bottom:1px dashed #ffc107;pointer-events:none;z-index:1"></div>
+    <div style="position:absolute;left:0;right:0;bottom:0;height:${mb*pxPerMm}px;background:repeating-linear-gradient(45deg, rgba(255,193,7,0.12), rgba(255,193,7,0.12) 6px, rgba(255,193,7,0.03) 6px, rgba(255,193,7,0.03) 12px);border-top:1px dashed #ffc107;pointer-events:none;z-index:1"></div>
+    <div style="position:absolute; left:${ml*pxPerMm}px; top:${mt*pxPerMm}px; right:${mr*pxPerMm}px; bottom:${mb*pxPerMm}px; border:1px dashed rgba(13,110,253,0.35); pointer-events:none; z-index:2"></div>
   ` : '';
 
-  const areaUtilStyle = `position:absolute; left:${ml*pxPerMm}px; top:${mt*pxPerMm}px; right:${mr*pxPerMm}px; bottom:${mb*pxPerMm}px; overflow:visible;`;
-  const areaComElementos = `<div style="${areaUtilStyle}">${elementosHtml}</div>`;
-
-  etiqueta.innerHTML = guias + areaComElementos;
+  etiqueta.innerHTML = guias + elementosHtml;
 
   elementos.forEach(el=>{
     if(el.tipo==='ean13'||el.tipo==='code128'){
@@ -904,18 +913,63 @@ function renderizarTudo(){
   renderizarLista(); initInteract();
 }
 
+
+
 function initInteract(){
   interact('.etiqueta-item-preview').draggable({
     modifiers:[interact.modifiers.restrictRect({restriction:'parent'})],
     listeners:{
-      move(ev){ const t=ev.target; const id=t.getAttribute('data-id'); const el=elementos.find(e=>e.id===id); if(!el)return; const p=t.parentElement; const dx=(ev.dx/p.offsetWidth)*100; const dy=(ev.dy/p.offsetHeight)*100; el.x+=dx; el.y+=dy; t.style.left=el.x+'%'; t.style.top=el.y+'%'; },
+      move(ev){ 
+        const t=ev.target; const id=t.getAttribute('data-id'); const el=elementos.find(e=>e.id===id); if(!el)return;
+        const etiqueta=document.getElementById('etiqueta');
+        const w=parseFloat(document.getElementById('inputWidth').value)||100;
+        const h=parseFloat(document.getElementById('inputHeight').value)||70;
+        const ml=parseFloat(document.getElementById('inputMarginLeft')?.value)||0;
+        const mr=parseFloat(document.getElementById('inputMarginRight')?.value)||0;
+        const mt=parseFloat(document.getElementById('inputMarginTop')?.value)||0;
+        const mb=parseFloat(document.getElementById('inputMarginBottom')?.value)||0;
+        const usableW=Math.max(1,w-ml-mr); const usableH=Math.max(1,h-mt-mb);
+        const pxPerMm=3.8;
+        // converte deslocamento px para % da área útil
+        const dxPct=(ev.dx/(usableW*pxPerMm))*100;
+        const dyPct=(ev.dy/(usableH*pxPerMm))*100;
+        el.x=Math.max(0,Math.min(100,el.x+dxPct));
+        el.y=Math.max(0,Math.min(100,el.y+dyPct));
+        // recalcula posição absoluta
+        const leftPx=(ml+(el.x/100)*usableW)*pxPerMm;
+        const topPx=(mt+(el.y/100)*usableH)*pxPerMm;
+        t.style.left=leftPx+'px'; t.style.top=topPx+'px';
+      },
       end(){ autoSalvar(); renderizarLista(); }
     }
   }).resizable({
     edges:{left:true,right:true,bottom:true,top:true},
-    modifiers:[interact.modifiers.restrictSize({min:{width:5,height:5}})],
+    modifiers:[interact.modifiers.restrictSize({min:{width:10,height:10}})],
     listeners:{
-      move(ev){ const t=ev.target; const id=t.getAttribute('data-id'); const el=elementos.find(e=>e.id===id); if(!el)return; const p=t.parentElement; el.w=(ev.rect.width/p.offsetWidth)*100; el.h=(ev.rect.height/p.offsetHeight)*100; el.x=(ev.rect.left-p.getBoundingClientRect().left)/p.offsetWidth*100; el.y=(ev.rect.top-p.getBoundingClientRect().top)/p.offsetHeight*100; t.style.width=el.w+'%'; t.style.height=el.h+'%'; t.style.left=el.x+'%'; t.style.top=el.y+'%'; },
+      move(ev){ 
+        const t=ev.target; const id=t.getAttribute('data-id'); const el=elementos.find(e=>e.id===id); if(!el)return;
+        const etiqueta=document.getElementById('etiqueta');
+        const w=parseFloat(document.getElementById('inputWidth').value)||100;
+        const h=parseFloat(document.getElementById('inputHeight').value)||70;
+        const pxPerMm=3.8;
+        // tamanho continua baseado no tamanho total, não na área útil (não altera tamanho)
+        el.w=(ev.rect.width/(w*pxPerMm))*100;
+        el.h=(ev.rect.height/(h*pxPerMm))*100;
+        // posição baseada na área útil
+        const ml=parseFloat(document.getElementById('inputMarginLeft')?.value)||0;
+        const mr=parseFloat(document.getElementById('inputMarginRight')?.value)||0;
+        const mt=parseFloat(document.getElementById('inputMarginTop')?.value)||0;
+        const mb=parseFloat(document.getElementById('inputMarginBottom')?.value)||0;
+        const usableW=Math.max(1,w-ml-mr); const usableH=Math.max(1,h-mt-mb);
+        el.x=((ev.rect.left-etiqueta.getBoundingClientRect().left)/pxPerMm - ml)/usableW*100;
+        el.y=((ev.rect.top-etiqueta.getBoundingClientRect().top)/pxPerMm - mt)/usableH*100;
+        t.style.width=el.w+'%'; // will be overwritten by px in next render, but keep
+        const leftPx=(ml+(el.x/100)*usableW)*pxPerMm;
+        const topPx=(mt+(el.y/100)*usableH)*pxPerMm;
+        const widthPx=(el.w/100)*w*pxPerMm;
+        const heightPx=(el.h/100)*h*pxPerMm;
+        t.style.left=leftPx+'px'; t.style.top=topPx+'px'; t.style.width=widthPx+'px'; t.style.height=heightPx+'px';
+      },
       end(){ autoSalvar(); renderizarLista(); renderizarTudo(); }
     }
   });
