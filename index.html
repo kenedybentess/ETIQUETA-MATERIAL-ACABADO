@@ -871,10 +871,6 @@ function renderizarTudo(){
   etiqueta.style.margin='0';
   etiqueta.style.padding='0';
 
-  // Área útil para posicionamento (margens empurram, mas não redimensionam)
-  const usableW = Math.max(0, w - ml - mr);
-  const usableH = Math.max(0, h - mt - mb);
-
   const elementosHtml = elementos.map(el=>{
     const val=getValorElemento(el);
     let inner='';
@@ -885,13 +881,15 @@ function renderizarTudo(){
     else if(el.tipo==='linha'){ inner=`<div style="width:100%;height:100%;display:flex;align-items:center"><div class="linha-interna" style="width:100%;height:${el.espessura}px;background:#000"></div></div>`; }
     else { inner=`<div class="preview-text" style="font-size:${el.fontSize}px;font-weight:${el.bold?'bold':'normal'};text-align:${el.align};justify-content:${el.align==='center'?'center':el.align==='right'?'flex-end':'flex-start'}">${val}</div>`; }
 
-    // Margem mexe na posição, mas tamanho continua igual (baseado no tamanho total da etiqueta)
-    const leftPx = (ml + (el.x/100)*usableW) * pxPerMm;
-    const topPx = (mt + (el.y/100)*usableH) * pxPerMm;
+    // DESLOCAR, NÃO COMPRIMIR: posição original + margem, tamanho continua igual
+    const baseLeftPx = (el.x/100)*w*pxPerMm;
+    const baseTopPx = (el.y/100)*h*pxPerMm;
+    const leftPx = baseLeftPx + ml*pxPerMm;
+    const topPx = baseTopPx + mt*pxPerMm;
     const widthPx = (el.w/100)*w*pxPerMm;
     const heightPx = (el.h/100)*h*pxPerMm;
 
-    return `<div class="etiqueta-item-preview" data-id="${el.id}" data-x="${el.x}" data-y="${el.y}" style="left:${leftPx}px;top:${topPx}px;width:${widthPx}px;height:${heightPx}px">${inner}</div>`;
+    return `<div class="etiqueta-item-preview" data-id="${el.id}" style="left:${leftPx}px;top:${topPx}px;width:${widthPx}px;height:${heightPx}px">${inner}</div>`;
   }).join('');
 
   const guias = (ml||mr||mt||mb) ? `
@@ -899,7 +897,6 @@ function renderizarTudo(){
     <div style="position:absolute;right:0;top:0;bottom:0;width:${mr*pxPerMm}px;background:repeating-linear-gradient(45deg, rgba(255,193,7,0.12), rgba(255,193,7,0.12) 6px, rgba(255,193,7,0.03) 6px, rgba(255,193,7,0.03) 12px);border-left:1px dashed #ffc107;pointer-events:none;z-index:1"></div>
     <div style="position:absolute;left:0;right:0;top:0;height:${mt*pxPerMm}px;background:repeating-linear-gradient(45deg, rgba(255,193,7,0.12), rgba(255,193,7,0.12) 6px, rgba(255,193,7,0.03) 6px, rgba(255,193,7,0.03) 12px);border-bottom:1px dashed #ffc107;pointer-events:none;z-index:1"></div>
     <div style="position:absolute;left:0;right:0;bottom:0;height:${mb*pxPerMm}px;background:repeating-linear-gradient(45deg, rgba(255,193,7,0.12), rgba(255,193,7,0.12) 6px, rgba(255,193,7,0.03) 6px, rgba(255,193,7,0.03) 12px);border-top:1px dashed #ffc107;pointer-events:none;z-index:1"></div>
-    <div style="position:absolute; left:${ml*pxPerMm}px; top:${mt*pxPerMm}px; right:${mr*pxPerMm}px; bottom:${mb*pxPerMm}px; border:1px dashed rgba(13,110,253,0.35); pointer-events:none; z-index:2"></div>
   ` : '';
 
   etiqueta.innerHTML = guias + elementosHtml;
@@ -915,30 +912,27 @@ function renderizarTudo(){
 
 
 
+
 function initInteract(){
   interact('.etiqueta-item-preview').draggable({
-    modifiers:[interact.modifiers.restrictRect({restriction:'parent'})],
+    modifiers:[interact.modifiers.restrictRect({restriction:'parent', endOnly:true})],
     listeners:{
       move(ev){ 
         const t=ev.target; const id=t.getAttribute('data-id'); const el=elementos.find(e=>e.id===id); if(!el)return;
-        const etiqueta=document.getElementById('etiqueta');
         const w=parseFloat(document.getElementById('inputWidth').value)||100;
         const h=parseFloat(document.getElementById('inputHeight').value)||70;
         const ml=parseFloat(document.getElementById('inputMarginLeft')?.value)||0;
-        const mr=parseFloat(document.getElementById('inputMarginRight')?.value)||0;
         const mt=parseFloat(document.getElementById('inputMarginTop')?.value)||0;
-        const mb=parseFloat(document.getElementById('inputMarginBottom')?.value)||0;
-        const usableW=Math.max(1,w-ml-mr); const usableH=Math.max(1,h-mt-mb);
         const pxPerMm=3.8;
-        // converte deslocamento px para % da área útil
-        const dxPct=(ev.dx/(usableW*pxPerMm))*100;
-        const dyPct=(ev.dy/(usableH*pxPerMm))*100;
+        // deslocamento em px vira % (sem comprimir)
+        const dxPct=(ev.dx/(w*pxPerMm))*100;
+        const dyPct=(ev.dy/(h*pxPerMm))*100;
         el.x=Math.max(0,Math.min(100,el.x+dxPct));
         el.y=Math.max(0,Math.min(100,el.y+dyPct));
-        // recalcula posição absoluta
-        const leftPx=(ml+(el.x/100)*usableW)*pxPerMm;
-        const topPx=(mt+(el.y/100)*usableH)*pxPerMm;
-        t.style.left=leftPx+'px'; t.style.top=topPx+'px';
+        const baseLeftPx=(el.x/100)*w*pxPerMm;
+        const baseTopPx=(el.y/100)*h*pxPerMm;
+        t.style.left=(baseLeftPx+ml*pxPerMm)+'px';
+        t.style.top=(baseTopPx+mt*pxPerMm)+'px';
       },
       end(){ autoSalvar(); renderizarLista(); }
     }
@@ -948,26 +942,23 @@ function initInteract(){
     listeners:{
       move(ev){ 
         const t=ev.target; const id=t.getAttribute('data-id'); const el=elementos.find(e=>e.id===id); if(!el)return;
-        const etiqueta=document.getElementById('etiqueta');
         const w=parseFloat(document.getElementById('inputWidth').value)||100;
         const h=parseFloat(document.getElementById('inputHeight').value)||70;
         const pxPerMm=3.8;
-        // tamanho continua baseado no tamanho total, não na área útil (não altera tamanho)
         el.w=(ev.rect.width/(w*pxPerMm))*100;
         el.h=(ev.rect.height/(h*pxPerMm))*100;
-        // posição baseada na área útil
         const ml=parseFloat(document.getElementById('inputMarginLeft')?.value)||0;
-        const mr=parseFloat(document.getElementById('inputMarginRight')?.value)||0;
         const mt=parseFloat(document.getElementById('inputMarginTop')?.value)||0;
-        const mb=parseFloat(document.getElementById('inputMarginBottom')?.value)||0;
-        const usableW=Math.max(1,w-ml-mr); const usableH=Math.max(1,h-mt-mb);
-        el.x=((ev.rect.left-etiqueta.getBoundingClientRect().left)/pxPerMm - ml)/usableW*100;
-        el.y=((ev.rect.top-etiqueta.getBoundingClientRect().top)/pxPerMm - mt)/usableH*100;
-        t.style.width=el.w+'%'; // will be overwritten by px in next render, but keep
-        const leftPx=(ml+(el.x/100)*usableW)*pxPerMm;
-        const topPx=(mt+(el.y/100)*usableH)*pxPerMm;
+        // posição continua com deslocamento da margem
+        const etiqueta=document.getElementById('etiqueta');
+        const rectLeft=(ev.rect.left-etiqueta.getBoundingClientRect().left)/pxPerMm;
+        const rectTop=(ev.rect.top-etiqueta.getBoundingClientRect().top)/pxPerMm;
+        el.x=((rectLeft - ml)/w)*100;
+        el.y=((rectTop - mt)/h)*100;
         const widthPx=(el.w/100)*w*pxPerMm;
         const heightPx=(el.h/100)*h*pxPerMm;
+        const leftPx=(el.x/100)*w*pxPerMm + ml*pxPerMm;
+        const topPx=(el.y/100)*h*pxPerMm + mt*pxPerMm;
         t.style.left=leftPx+'px'; t.style.top=topPx+'px'; t.style.width=widthPx+'px'; t.style.height=heightPx+'px';
       },
       end(){ autoSalvar(); renderizarLista(); renderizarTudo(); }
