@@ -62,7 +62,9 @@ body{background:#f4f6f9;display:flex;height:100vh;overflow:hidden}
   .sidebar, #infoAutoPrint, .no-print, .autocomplete-list, .vinculo-aviso{display:none !important}
   .preview-area{background:white !important;padding:0 !important;margin:0 !important;display:block !important;overflow:visible !important;height:auto !important}
   #etiqueta{border:none !important;box-shadow:none !important;margin:0 !important;position:relative !important;-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
-  .etiqueta-item-preview{border:none !important;background:transparent !important;-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
+  .etiqueta-item-preview{border:none !important;background:transparent !important;}
+  #etiqueta > div[style*="repeating-linear-gradient"]{display:none !important;}
+  #etiqueta > div[style*="dashed rgba"]{display:none !important;border:none !important;background:none !important;-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
   @page{margin:0;size:auto}
 }
 </style>
@@ -864,22 +866,28 @@ function renderizarTudo(){
   const pxPerMm=3.8;
   etiqueta.style.width=(w*pxPerMm)+'px';
   etiqueta.style.height=(h*pxPerMm)+'px';
-  etiqueta.style.paddingLeft=(ml*pxPerMm)+'px';
-  etiqueta.style.paddingRight=(mr*pxPerMm)+'px';
-  etiqueta.style.paddingTop=(mt*pxPerMm)+'px';
-  etiqueta.style.paddingBottom=(mb*pxPerMm)+'px';
   etiqueta.style.boxSizing='border-box';
-  etiqueta.innerHTML=elementos.map(el=>{
-    const val=getValorElemento(el);
-    let inner='';
-    if(el.tipo==='imagem'){ inner=`<img style="width:100%;height:100%;object-fit:contain;pointer-events:none" src="${el.imagem||'https://via.placeholder.com/100x50?text=LOGO'}">`; }
-    else if(el.tipo==='ean13'){ inner=`<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center"><svg id="barcode_${el.id}"></svg><div style="font-size:8px;font-family:monospace">${val}</div></div>`; }
-    else if(el.tipo==='code128'){ inner=`<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center"><svg id="barcode_${el.id}"></svg><div style="font-size:8px;font-family:monospace">${val}</div></div>`; }
-    else if(el.tipo==='qrcode'){ inner=`<div id="qr_${el.id}" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center"></div>`; }
-    else if(el.tipo==='linha'){ inner=`<div style="width:100%;height:100%;display:flex;align-items:center"><div class="linha-interna" style="width:100%;height:${el.espessura}px;background:#000"></div></div>`; }
-    else { inner=`<div class="preview-text" style="font-size:${el.fontSize}px;font-weight:${el.bold?'bold':'normal'};text-align:${el.align};justify-content:${el.align==='center'?'center':el.align==='right'?'flex-end':'flex-start'}">${val}</div>`; }
-    return `<div class="etiqueta-item-preview" data-id="${el.id}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%">${inner}</div>`;
-  }).join('');
+  etiqueta.style.position='relative';
+  etiqueta.style.padding='0';
+  
+
+  const areaUtilStyle = `position:absolute; left:${ml*pxPerMm}px; top:${mt*pxPerMm}px; right:${mr*pxPerMm}px; bottom:${mb*pxPerMm}px; overflow:visible;`;
+
+  const guias = (ml||mr||mt||mb) ? `
+    <div style="position:absolute;left:0;top:0;bottom:0;width:${ml*pxPerMm}px;background:repeating-linear-gradient(45deg, rgba(255,193,7,0.15), rgba(255,193,7,0.15) 6px, rgba(255,193,7,0.05) 6px, rgba(255,193,7,0.05) 12px);border-right:1px dashed #ffc107;pointer-events:none;z-index:1"></div>
+    <div style="position:absolute;right:0;top:0;bottom:0;width:${mr*pxPerMm}px;background:repeating-linear-gradient(45deg, rgba(255,193,7,0.15), rgba(255,193,7,0.15) 6px, rgba(255,193,7,0.05) 6px, rgba(255,193,7,0.05) 12px);border-left:1px dashed #ffc107;pointer-events:none;z-index:1"></div>
+    <div style="position:absolute;left:0;right:0;top:0;height:${mt*pxPerMm}px;background:repeating-linear-gradient(45deg, rgba(255,193,7,0.15), rgba(255,193,7,0.15) 6px, rgba(255,193,7,0.05) 6px, rgba(255,193,7,0.05) 12px);border-bottom:1px dashed #ffc107;pointer-events:none;z-index:1"></div>
+    <div style="position:absolute;left:0;right:0;bottom:0;height:${mb*pxPerMm}px;background:repeating-linear-gradient(45deg, rgba(255,193,7,0.15), rgba(255,193,7,0.15) 6px, rgba(255,193,7,0.05) 6px, rgba(255,193,7,0.05) 12px);border-top:1px dashed #ffc107;pointer-events:none;z-index:1"></div>
+    <div style="position:absolute; left:${ml*pxPerMm}px; top:${mt*pxPerMm}px; right:${mr*pxPerMm}px; bottom:${mb*pxPerMm}px; border:1px dashed rgba(13,110,253,0.4); pointer-events:none; z-index:2"></div>
+  ` : '';
+
+  // Elementos agora ficam dentro da área útil, então as margens realmente empurram o conteúdo
+  const areaComElementos = `<div style="${areaUtilStyle}">${elementosHtml}</div>`;
+
+  etiqueta.innerHTML = guias + areaComElementos;
+
+
+  // placeholder to close
   elementos.forEach(el=>{
     if(el.tipo==='ean13'||el.tipo==='code128'){
       try{ const svg=document.getElementById('barcode_'+el.id); if(svg){ JsBarcode(svg, getValorElemento(el)||'123456', {format:el.tipo==='ean13'?'ean13':'code128',displayValue:false,height:el.h*2.5,width:1.2,margin:0}); } }catch(e){}
@@ -892,14 +900,14 @@ function initInteract(){
   interact('.etiqueta-item-preview').draggable({
     modifiers:[interact.modifiers.restrictRect({restriction:'parent'})],
     listeners:{
-      move(ev){ const t=ev.target; const id=t.getAttribute('data-id'); const el=elementos.find(e=>e.id===id); if(!el)return; const p=document.getElementById('etiqueta'); const dx=(ev.dx/p.offsetWidth)*100; const dy=(ev.dy/p.offsetHeight)*100; el.x+=dx; el.y+=dy; t.style.left=el.x+'%'; t.style.top=el.y+'%'; },
+      move(ev){ const t=ev.target; const id=t.getAttribute('data-id'); const el=elementos.find(e=>e.id===id); if(!el)return; const p=t.parentElement; const dx=(ev.dx/p.offsetWidth)*100; const dy=(ev.dy/p.offsetHeight)*100; el.x+=dx; el.y+=dy; t.style.left=el.x+'%'; t.style.top=el.y+'%'; },
       end(){ autoSalvar(); renderizarLista(); }
     }
   }).resizable({
     edges:{left:true,right:true,bottom:true,top:true},
     modifiers:[interact.modifiers.restrictSize({min:{width:5,height:5}})],
     listeners:{
-      move(ev){ const t=ev.target; const id=t.getAttribute('data-id'); const el=elementos.find(e=>e.id===id); if(!el)return; const p=document.getElementById('etiqueta'); el.w=(ev.rect.width/p.offsetWidth)*100; el.h=(ev.rect.height/p.offsetHeight)*100; el.x=(ev.rect.left-p.getBoundingClientRect().left)/p.offsetWidth*100; el.y=(ev.rect.top-p.getBoundingClientRect().top)/p.offsetHeight*100; t.style.width=el.w+'%'; t.style.height=el.h+'%'; t.style.left=el.x+'%'; t.style.top=el.y+'%'; },
+      move(ev){ const t=ev.target; const id=t.getAttribute('data-id'); const el=elementos.find(e=>e.id===id); if(!el)return; const p=t.parentElement; el.w=(ev.rect.width/p.offsetWidth)*100; el.h=(ev.rect.height/p.offsetHeight)*100; el.x=(ev.rect.left-p.getBoundingClientRect().left)/p.offsetWidth*100; el.y=(ev.rect.top-p.getBoundingClientRect().top)/p.offsetHeight*100; t.style.width=el.w+'%'; t.style.height=el.h+'%'; t.style.left=el.x+'%'; t.style.top=el.y+'%'; },
       end(){ autoSalvar(); renderizarLista(); renderizarTudo(); }
     }
   });
