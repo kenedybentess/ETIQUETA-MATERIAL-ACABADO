@@ -121,8 +121,26 @@ body{background:#f4f6f9;display:flex;height:100vh;overflow:hidden}
       <h3>📋 Ordem e Quantidade</h3>
       <div class="row-inputs">
         <div class="form-group"><label>Número da Ordem *</label><input id="prod_ordem" placeholder="Ex: OP-2024-1542" oninput="onProdChange()"></div>
-        <div class="form-group"><label>QTD *</label><input id="prod_qtd" type="number" min="1" value="1" placeholder="1" oninput="onProdChange()"></div>
+        <div class="form-group"><label>QTD *</label><input id="prod_qtd" type="number" min="1" value="1" placeholder="1" oninput="onProdChange(); atualizarSeriesQtd()"></div>
       </div>
+    </div>
+
+    <div class="card-prod" style="border-color:#0d6efd;background:linear-gradient(135deg,#e7f1ff,#ffffff)">
+      <h3>🔢 Números de Série Especificados <span id="badgeSeries" class="badge" style="background:#0d6efd;color:white">0 / 0</span></h3>
+      <div class="form-group">
+        <label>Digite os números de série (um por linha, ou separados por vírgula/espaço)</label>
+        <textarea id="prod_series_input" rows="4" placeholder="Ex:\nSN20240001\nSN20240002\nSN20240003\nOu: SN001, SN002, SN003" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:5px;font-size:12px;font-family:monospace;resize:vertical" oninput="onSeriesTextChange()"></textarea>
+        <div style="font-size:10px;color:#666;margin-top:3px">QTD informada: <span id="qtdInfo">1</span> | Séries informadas: <span id="seriesInfo">0</span> <span id="seriesStatus"></span></div>
+      </div>
+      <div class="row-inputs">
+        <div class="form-group"><label>Prefixo para gerar</label><input id="prod_prefixo_serie" placeholder="Ex: SN, ELG, etc" oninput="onProdChange()"></div>
+        <div class="form-group"><label>Início numérico</label><input id="prod_inicio_serie" type="number" value="1" min="1"></div>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <button type="button" style="flex:1;padding:8px;background:#0d6efd;color:white;border:none;border-radius:5px;font-weight:700;font-size:11px;cursor:pointer" onclick="gerarSeriesAutomaticas()">⚙️ Gerar Séries Automáticas (pela QTD)</button>
+        <button type="button" style="padding:8px 12px;background:#6c757d;color:white;border:none;border-radius:5px;font-weight:700;font-size:11px;cursor:pointer" onclick="limparSeries()">🗑️ Limpar</button>
+      </div>
+      <div id="listaSeriesChips" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;max-height:120px;overflow:auto;border:1px solid #e0e0e0;border-radius:5px;padding:6px;background:#fafafa;min-height:30px"></div>
     </div>
 
     <div class="card-prod" style="border-color:#fd7e14">
@@ -185,10 +203,21 @@ body{background:#f4f6f9;display:flex;height:100vh;overflow:hidden}
     </div>
 
     <button class="btn-prod" onclick="preencherAgora()">⚡ Preencher Data/Hora Agora</button>
-    <button class="btn-db" onclick="salvarOrdem()">💾 Salvar Ordem no Histórico</button>
+    <div class="row-inputs">
+      <button class="btn-db" style="flex:1" onclick="salvarOrdem()">💾 Salvar no Log</button>
+      <button class="btn-save" style="flex:1;background:#fd7e14" onclick="gerarLogCompleto()">📋 Gerar Log Completo</button>
+    </div>
     <button class="print-btn" onclick="window.print()">🖨️ IMPRIMIR ETIQUETA</button>
 
-    <h2>📜 Histórico de Ordens</h2>
+    <h2>📊 LOG DE PRODUÇÃO - TODAS AS INFORMAÇÕES</h2>
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <button style="flex:1;padding:6px;background:#198754;color:white;border:none;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer" onclick="exportarLogCSV()">📤 Exportar CSV</button>
+      <button style="flex:1;padding:6px;background:#0d6efd;color:white;border:none;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer" onclick="exportarLogJSON()">📤 Exportar JSON</button>
+      <button style="padding:6px 10px;background:#dc3545;color:white;border:none;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer" onclick="limparLog()">🗑️ Limpar Log</button>
+    </div>
+    <div id="logCompleto" style="background:white;border:1px solid #ddd;border-radius:6px;padding:8px;max-height:300px;overflow:auto;font-size:10px;font-family:monospace;white-space:pre-wrap"></div>
+
+    <h2>📜 Histórico Rápido</h2>
     <div id="listaOrdens" style="max-height:180px;overflow:auto"></div>
   </div>
 
@@ -268,7 +297,9 @@ let dadosEtiqueta = {
   hora_inspecao: new Date().toTimeString().slice(0,5),
   resp_inspecao:'',
   ean13:'',
-  serie:''
+  serie:'',
+  series: [], // lista de números de série especificados
+  prefixo_serie: ''
 };
 
 let elementos = [];
@@ -428,6 +459,11 @@ function onProdChange(){
   dadosEtiqueta.data_inspecao=document.getElementById('prod_data_insp').value;
   dadosEtiqueta.hora_inspecao=document.getElementById('prod_hora_insp').value;
   dadosEtiqueta.resp_inspecao=document.getElementById('prod_resp_insp').value.trim();
+  dadosEtiqueta.prefixo_serie=document.getElementById('prod_prefixo_serie')?.value.trim()||'';
+  // Se tiver series, usa primeira como serie principal para etiqueta
+  if(dadosEtiqueta.series && dadosEtiqueta.series.length>0){
+    dadosEtiqueta.serie = dadosEtiqueta.series[0];
+  }
   renderizarTudo(); autoSalvar();
 }
 function preencherAgora(){
@@ -439,12 +475,7 @@ function preencherAgora(){
   onProdChange();
 }
 function salvarOrdem(){
-  if(!dadosEtiqueta.codigo||!dadosEtiqueta.ordem){ alert('Preencha Código e Número da Ordem'); return; }
-  const ordem={...dadosEtiqueta, id:Date.now().toString(), timestamp:new Date().toLocaleString('pt-BR')};
-  historicoOrdens.unshift(ordem);
-  localStorage.setItem(ORDEM_KEY, JSON.stringify(historicoOrdens.slice(0,100)));
-  renderizarOrdens();
-  alert('Ordem salva no histórico!');
+  salvarOrdemComSeries();
 }
 function renderizarOrdens(){
   const div=document.getElementById('listaOrdens'); if(!div)return;
@@ -618,6 +649,11 @@ function importarConfig(e){
         setVal('prod_data_insp', d.data_inspecao);
         setVal('prod_hora_insp', d.hora_inspecao);
         setVal('prod_resp_insp', d.resp_inspecao);
+        const seriesInput = document.getElementById('prod_series_input');
+        if(seriesInput) seriesInput.value = (d.series||[]).join('\n');
+        const prefixInput = document.getElementById('prod_prefixo_serie');
+        if(prefixInput) prefixInput.value = d.prefixo_serie||'';
+        if(typeof atualizarSeriesUI==='function') atualizarSeriesUI();
         setVal('inputWidth', est.largura);
         setVal('inputHeight', est.altura);
         // Atualiza aviso de vinculado
@@ -811,6 +847,9 @@ window.onload=()=>{
         document.getElementById('prod_data_insp').value=dadosEtiqueta.data_inspecao||hoje;
         document.getElementById('prod_hora_insp').value=dadosEtiqueta.hora_inspecao||agora;
         document.getElementById('prod_resp_insp').value=dadosEtiqueta.resp_inspecao||'';
+        document.getElementById('prod_series_input').value=(dadosEtiqueta.series||[]).join('\n');
+        document.getElementById('prod_prefixo_serie').value=dadosEtiqueta.prefixo_serie||'';
+        atualizarSeriesUI();
       }
         if(est.largura) document.getElementById('inputWidth').value=est.largura;
         if(est.altura) document.getElementById('inputHeight').value=est.altura;
