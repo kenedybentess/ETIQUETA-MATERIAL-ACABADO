@@ -207,7 +207,7 @@ body{background:#f4f6f9;display:flex;height:100vh;overflow:hidden}
       <button class="btn-db" style="flex:1" onclick="salvarOrdem()">💾 Salvar no Log</button>
       <button class="btn-save" style="flex:1;background:#fd7e14" onclick="gerarLogCompleto()">📋 Gerar Log Completo</button>
     </div>
-    <button class="print-btn" onclick="window.print()">🖨️ IMPRIMIR ETIQUETA</button>
+    <button class="print-btn" onclick="imprimirEGerarLog()">🖨️ IMPRIMIR ETIQUETA</button>
 
     <h2>📊 LOG DE PRODUÇÃO - TODAS AS INFORMAÇÕES</h2>
     <div style="display:flex;gap:6px;margin-bottom:8px">
@@ -263,7 +263,7 @@ body{background:#f4f6f9;display:flex;height:100vh;overflow:hidden}
       <input type="file" id="importLayout" accept=".json" style="display:none" onchange="importarConfig(event)">
     </div>
     <div id="statusSave" style="font-size:10px;color:#666;margin-top:4px">Salvo automaticamente --:--</div>
-    <button class="print-btn" onclick="window.print()">🖨️ IMPRIMIR ETIQUETA ATUAL</button>
+    <button class="print-btn" onclick="imprimirEGerarLog()">🖨️ IMPRIMIR ETIQUETA ATUAL</button>
   </div>
 </div>
 
@@ -654,7 +654,80 @@ function salvarOrdemComSeries(){
 }
 
 
+
+function limparCamposProducao(){
+  const hoje = new Date().toISOString().slice(0,10);
+  const agora = new Date().toTimeString().slice(0,5);
+  const setVal = (id, v)=>{ const el=document.getElementById(id); if(el) el.value=v; };
+  setVal('prod_codigo','');
+  setVal('prod_descricao','');
+  setVal('prod_ordem','');
+  setVal('prod_qtd','1');
+  setVal('prod_series_input','');
+  setVal('prod_prefixo_serie','');
+  setVal('prod_inicio_serie','1');
+  setVal('prod_resp_prod','');
+  setVal('prod_resp_insp','');
+  setVal('prod_data_prod',hoje);
+  setVal('prod_hora_prod',agora);
+  setVal('prod_data_insp',hoje);
+  setVal('prod_hora_insp',agora);
+  dadosEtiqueta = {
+    codigo:'', descricao:'', ordem:'', qtd:'1', series:[],
+    data_producao:hoje, hora_producao:agora, resp_producao:'',
+    data_inspecao:hoje, hora_inspecao:agora, resp_inspecao:'',
+    prefixo_serie:'', serie:''
+  };
+  produtoVinculadoId=null;
+  const avisoProd=document.getElementById('avisoProducao'); if(avisoProd) avisoProd.style.display='none';
+  const avisoVinc=document.getElementById('avisoVinculo'); if(avisoVinc) avisoVinc.style.display='none';
+  const statusCod=document.getElementById('statusProdCodigo'); if(statusCod) statusCod.innerHTML='';
+  atualizarSeriesUI();
+  renderizarTudo();
+  autoSalvar();
+}
+
+function imprimirEGerarLog(){
+  const cod = (document.getElementById('prod_codigo')?.value||'').trim();
+  const ord = (document.getElementById('prod_ordem')?.value||'').trim();
+  if(!cod || !ord){
+    alert('Preencha Código e Número da Ordem antes de imprimir');
+    return;
+  }
+  // 1. Gera LOG (mesma função do botão Salvar no Log)
+  salvarOrdemComSeries();
+
+  // 2. Configura limpeza automática após impressão
+  const afterPrintHandler = ()=>{
+    limparCamposProducao();
+    window.removeEventListener('afterprint', afterPrintHandler);
+  };
+  window.addEventListener('afterprint', afterPrintHandler);
+
+  // Fallback para navegadores que não disparam afterprint corretamente
+  // Se após 2s o usuário já fechou o diálogo de impressão, limpa
+  let impressaoIniciada = Date.now();
+  const checkPrint = setInterval(()=>{
+    // Se a aba voltar a ter foco após 1s da impressão, considera que imprimiu
+    if(document.hasFocus() && Date.now()-impressaoIniciada>1500){
+      const codAtual = (document.getElementById('prod_codigo')?.value||'').trim();
+      if(codAtual){
+        limparCamposProducao();
+      }
+      clearInterval(checkPrint);
+      window.removeEventListener('afterprint', afterPrintHandler);
+    }
+    if(Date.now()-impressaoIniciada>10000){
+      clearInterval(checkPrint);
+    }
+  },500);
+
+  // 3. Imprime
+  setTimeout(()=>window.print(), 200);
+}
+
 function onProdChange(){
+
   dadosEtiqueta.ordem=document.getElementById('prod_ordem').value.trim();
   dadosEtiqueta.qtd=document.getElementById('prod_qtd').value.trim();
   dadosEtiqueta.data_producao=document.getElementById('prod_data_prod').value;
