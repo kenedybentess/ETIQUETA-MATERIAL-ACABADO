@@ -869,9 +869,18 @@ function renderizarTudo(){
   etiqueta.style.boxSizing='border-box';
   etiqueta.style.position='relative';
   etiqueta.style.padding='0';
-  
 
-  const areaUtilStyle = `position:absolute; left:${ml*pxPerMm}px; top:${mt*pxPerMm}px; right:${mr*pxPerMm}px; bottom:${mb*pxPerMm}px; overflow:visible;`;
+  const elementosHtml = elementos.map(el=>{
+    const val=getValorElemento(el);
+    let inner='';
+    if(el.tipo==='imagem'){ inner=`<img style="width:100%;height:100%;object-fit:contain;pointer-events:none" src="${el.imagem||'https://via.placeholder.com/100x50?text=LOGO'}">`; }
+    else if(el.tipo==='ean13'){ inner=`<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center"><svg id="barcode_${el.id}"></svg><div style="font-size:8px;font-family:monospace">${val}</div></div>`; }
+    else if(el.tipo==='code128'){ inner=`<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center"><svg id="barcode_${el.id}"></svg><div style="font-size:8px;font-family:monospace">${val}</div></div>`; }
+    else if(el.tipo==='qrcode'){ inner=`<div id="qr_${el.id}" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center"></div>`; }
+    else if(el.tipo==='linha'){ inner=`<div style="width:100%;height:100%;display:flex;align-items:center"><div class="linha-interna" style="width:100%;height:${el.espessura}px;background:#000"></div></div>`; }
+    else { inner=`<div class="preview-text" style="font-size:${el.fontSize}px;font-weight:${el.bold?'bold':'normal'};text-align:${el.align};justify-content:${el.align==='center'?'center':el.align==='right'?'flex-end':'flex-start'}">${val}</div>`; }
+    return `<div class="etiqueta-item-preview" data-id="${el.id}" style="left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%">${inner}</div>`;
+  }).join('');
 
   const guias = (ml||mr||mt||mb) ? `
     <div style="position:absolute;left:0;top:0;bottom:0;width:${ml*pxPerMm}px;background:repeating-linear-gradient(45deg, rgba(255,193,7,0.15), rgba(255,193,7,0.15) 6px, rgba(255,193,7,0.05) 6px, rgba(255,193,7,0.05) 12px);border-right:1px dashed #ffc107;pointer-events:none;z-index:1"></div>
@@ -881,13 +890,11 @@ function renderizarTudo(){
     <div style="position:absolute; left:${ml*pxPerMm}px; top:${mt*pxPerMm}px; right:${mr*pxPerMm}px; bottom:${mb*pxPerMm}px; border:1px dashed rgba(13,110,253,0.4); pointer-events:none; z-index:2"></div>
   ` : '';
 
-  // Elementos agora ficam dentro da área útil, então as margens realmente empurram o conteúdo
+  const areaUtilStyle = `position:absolute; left:${ml*pxPerMm}px; top:${mt*pxPerMm}px; right:${mr*pxPerMm}px; bottom:${mb*pxPerMm}px; overflow:visible;`;
   const areaComElementos = `<div style="${areaUtilStyle}">${elementosHtml}</div>`;
 
   etiqueta.innerHTML = guias + areaComElementos;
 
-
-  // placeholder to close
   elementos.forEach(el=>{
     if(el.tipo==='ean13'||el.tipo==='code128'){
       try{ const svg=document.getElementById('barcode_'+el.id); if(svg){ JsBarcode(svg, getValorElemento(el)||'123456', {format:el.tipo==='ean13'?'ean13':'code128',displayValue:false,height:el.h*2.5,width:1.2,margin:0}); } }catch(e){}
@@ -896,6 +903,7 @@ function renderizarTudo(){
   });
   renderizarLista(); initInteract();
 }
+
 function initInteract(){
   interact('.etiqueta-item-preview').draggable({
     modifiers:[interact.modifiers.restrictRect({restriction:'parent'})],
