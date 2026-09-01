@@ -450,6 +450,214 @@ function selecionarProd(id){
   document.getElementById('statusProdCodigo').innerHTML='<span class="status-ok">✅ Selecionado do banco</span>';
   esconderAutoProd(); renderizarTudo(); renderizarDB();
 }
+
+// --- NÚMEROS DE SÉRIE ESPECIFICADOS E LOG ---
+function onSeriesTextChange(){
+  const el = document.getElementById('prod_series_input');
+  if(!el) return;
+  const txt = el.value;
+  let parts = txt.split(/[\n,;\t]+/).map(s=>s.trim()).filter(s=>s.length>0);
+  let finalSeries = [];
+  parts.forEach(p=>{
+    if(p.includes(' ')){
+      p.split(/\s+/).forEach(sub=>{
+        if(sub.trim()) finalSeries.push(sub.trim());
+      });
+    }else{
+      finalSeries.push(p);
+    }
+  });
+  finalSeries = [...new Set(finalSeries)];
+  dadosEtiqueta.series = finalSeries;
+  atualizarSeriesUI();
+  onProdChange();
+}
+
+function atualizarSeriesUI(){
+  const qtdEl = document.getElementById('prod_qtd');
+  const qtd = parseInt(qtdEl?.value)||0;
+  const count = (dadosEtiqueta.series||[]).length;
+  const qtdInfo = document.getElementById('qtdInfo');
+  const seriesInfo = document.getElementById('seriesInfo');
+  const badge = document.getElementById('badgeSeries');
+  if(qtdInfo) qtdInfo.innerText = qtd;
+  if(seriesInfo) seriesInfo.innerText = count;
+  if(badge) badge.innerText = count + ' / ' + qtd;
+  
+  const status = document.getElementById('seriesStatus');
+  if(status){
+    if(count===0) status.innerHTML = '<span style="color:#999">- vazio</span>';
+    else if(count < qtd) status.innerHTML = '<span style="color:#fd7e14">⚠️ faltam '+(qtd-count)+'</span>';
+    else if(count===qtd) status.innerHTML = '<span style="color:#198754">✅ OK</span>';
+    else status.innerHTML = '<span style="color:#dc3545">⚠️ sobrando '+(count-qtd)+'</span>';
+  }
+  
+  const chipsDiv = document.getElementById('listaSeriesChips');
+  if(chipsDiv){
+    if(count===0){
+      chipsDiv.innerHTML = '<span style="font-size:10px;color:#999">Nenhum número de série informado</span>';
+    }else{
+      chipsDiv.innerHTML = dadosEtiqueta.series.map((s,i)=>`<span style="background:#e7f1ff;border:1px solid #0d6efd;border-radius:12px;padding:2px 8px;font-size:10px;font-family:monospace;display:flex;align-items:center;gap:4px">${s} <button onclick="removerSerie(${i})" style="background:#dc3545;color:white;border:none;border-radius:50%;width:14px;height:14px;font-size:9px;cursor:pointer;line-height:1">x</button></span>`).join('');
+    }
+  }
+}
+
+function atualizarSeriesQtd(){
+  atualizarSeriesUI();
+}
+
+function gerarSeriesAutomaticas(){
+  const qtdEl = document.getElementById('prod_qtd');
+  const qtd = parseInt(qtdEl?.value)||1;
+  const prefixoEl = document.getElementById('prod_prefixo_serie');
+  const prefixo = prefixoEl?.value.trim() || '';
+  const inicioEl = document.getElementById('prod_inicio_serie');
+  const inicio = parseInt(inicioEl?.value)||1;
+  const codigo = document.getElementById('prod_codigo')?.value.trim() || 'PRD';
+  
+  let prefixoFinal = prefixo || codigo.substring(0,3).toUpperCase();
+  
+  let novasSeries = [];
+  for(let i=0;i<qtd;i++){
+    let num = inicio + i;
+    let numStr = String(num).padStart(4,'0');
+    novasSeries.push(prefixoFinal + numStr);
+  }
+  
+  dadosEtiqueta.series = novasSeries;
+  const input = document.getElementById('prod_series_input');
+  if(input) input.value = novasSeries.join('\n');
+  dadosEtiqueta.prefixo_serie = prefixoFinal;
+  atualizarSeriesUI();
+  onProdChange();
+}
+
+function limparSeries(){
+  if(!confirm('Limpar todos os números de série?')) return;
+  dadosEtiqueta.series = [];
+  const input = document.getElementById('prod_series_input');
+  if(input) input.value = '';
+  atualizarSeriesUI();
+  onProdChange();
+}
+
+function removerSerie(idx){
+  dadosEtiqueta.series.splice(idx,1);
+  const input = document.getElementById('prod_series_input');
+  if(input) input.value = dadosEtiqueta.series.join('\n');
+  atualizarSeriesUI();
+  onProdChange();
+}
+
+function gerarLogCompleto(){
+  const logDiv = document.getElementById('logCompleto');
+  if(!logDiv) return;
+  if(historicoOrdens.length===0){
+    logDiv.innerText = 'Nenhum log ainda. Salve uma ordem primeiro.';
+    return;
+  }
+  
+  let logText = 'LOG DE PRODUÇÃO - GERADO EM '+new Date().toLocaleString('pt-BR')+'\n';
+  logText += '================================================================================\n\n';
+  
+  historicoOrdens.forEach((o, idx)=>{
+    logText += `--- REGISTRO ${idx+1} - ${o.timestamp} ---\n`;
+    logText += `Código Produto: ${o.codigo}\n`;
+    logText += `Descrição: ${o.descricao}\n`;
+    logText += `Número Ordem: ${o.ordem}\n`;
+    logText += `QTD: ${o.qtd}\n`;
+    logText += `Números de Série (${(o.series||[]).length}): ${(o.series||[]).join(', ') || 'N/A'}\n`;
+    logText += `Data Produção: ${o.data_producao} ${o.hora_producao}\n`;
+    logText += `Responsável Produção: ${o.resp_producao}\n`;
+    logText += `Data Inspeção: ${o.data_inspecao} ${o.hora_inspecao}\n`;
+    logText += `Responsável Inspeção: ${o.resp_inspecao}\n`;
+    logText += `Prefixo Série: ${o.prefixo_serie||''}\n`;
+    logText += '\n';
+  });
+  
+  logDiv.innerText = logText;
+}
+
+function exportarLogCSV(){
+  if(historicoOrdens.length===0){ alert('Nenhum log para exportar'); return; }
+  
+  let csv = 'Data Log,Código,Descrição,Ordem,QTD,Series,Data Produção,Hora Produção,Resp Produção,Data Inspeção,Hora Inspeção,Resp Inspeção,Prefixo\n';
+  historicoOrdens.forEach(o=>{
+    const seriesStr = (o.series||[]).join(';');
+    const linha = [
+      `"${(o.timestamp||'').replace(/"/g,'""')}"`,
+      `"${(o.codigo||'').replace(/"/g,'""')}"`,
+      `"${(o.descricao||'').replace(/"/g,'""')}"`,
+      `"${(o.ordem||'').replace(/"/g,'""')}"`,
+      `"${o.qtd||''}"`,
+      `"${seriesStr.replace(/"/g,'""')}"`,
+      `"${o.data_producao||''}"`,
+      `"${o.hora_producao||''}"`,
+      `"${(o.resp_producao||'').replace(/"/g,'""')}"`,
+      `"${o.data_inspecao||''}"`,
+      `"${o.hora_inspecao||''}"`,
+      `"${(o.resp_inspecao||'').replace(/"/g,'""')}"`,
+      `"${(o.prefixo_serie||'').replace(/"/g,'""')}"`
+    ].join(',');
+    csv += linha + '\n';
+  });
+  
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'log_producao_'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+function exportarLogJSON(){
+  if(historicoOrdens.length===0){ alert('Nenhum log para exportar'); return; }
+  const blob = new Blob([JSON.stringify(historicoOrdens,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'log_producao_'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+function limparLog(){
+  if(!confirm('Limpar todo o LOG de produção? Esta ação não pode ser desfeita.')) return;
+  historicoOrdens = [];
+  localStorage.removeItem(ORDEM_KEY);
+  renderizarOrdens();
+  const logDiv = document.getElementById('logCompleto');
+  if(logDiv) logDiv.innerText = 'Log limpo.';
+}
+
+function salvarOrdemComSeries(){
+  if(!dadosEtiqueta.codigo || !dadosEtiqueta.ordem){ alert('Preencha Código e Número da Ordem'); return; }
+  if((dadosEtiqueta.series||[]).length===0){
+    if(!confirm('Nenhum número de série informado. Salvar mesmo assim?')) return;
+  }else if(dadosEtiqueta.series.length != parseInt(dadosEtiqueta.qtd||0)){
+    if(!confirm(`QTD é ${dadosEtiqueta.qtd} mas você informou ${dadosEtiqueta.series.length} séries. Salvar mesmo assim?`)) return;
+  }
+  
+  const ordem = {
+    ...dadosEtiqueta,
+    series: [...(dadosEtiqueta.series||[])],
+    id: Date.now().toString(),
+    timestamp: new Date().toLocaleString('pt-BR'),
+    data_iso: new Date().toISOString()
+  };
+  
+  historicoOrdens.unshift(ordem);
+  localStorage.setItem(ORDEM_KEY, JSON.stringify(historicoOrdens.slice(0,500)));
+  renderizarOrdens();
+  gerarLogCompleto();
+  
+  alert(`✅ Log salvo!\nOrdem: ${ordem.ordem}\nQTD: ${ordem.qtd}\nSéries: ${ordem.series.length} números`);
+}
+
+
 function onProdChange(){
   dadosEtiqueta.ordem=document.getElementById('prod_ordem').value.trim();
   dadosEtiqueta.qtd=document.getElementById('prod_qtd').value.trim();
