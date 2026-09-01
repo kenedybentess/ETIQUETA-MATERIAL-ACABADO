@@ -211,7 +211,7 @@ body{background:#f4f6f9;display:flex;height:100vh;overflow:hidden}
 
     <h2>📊 LOG DE PRODUÇÃO - TODAS AS INFORMAÇÕES</h2>
     <div style="display:flex;gap:6px;margin-bottom:8px">
-      <button style="flex:1;padding:6px;background:#198754;color:white;border:none;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer" onclick="exportarLogCSV()">📤 Exportar CSV</button>
+      <button style="flex:1;padding:6px;background:#198754;color:white;border:none;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer" onclick="exportarLogCSV()">📤 Exportar TXT</button>
       <button style="flex:1;padding:6px;background:#0d6efd;color:white;border:none;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer" onclick="exportarLogJSON()">📤 Exportar JSON</button>
       <button style="padding:6px 10px;background:#dc3545;color:white;border:none;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer" onclick="limparLog()">🗑️ Limpar Log</button>
     </div>
@@ -581,31 +581,27 @@ function gerarLogCompleto(){
 function exportarLogCSV(){
   if(historicoOrdens.length===0){ alert('Nenhum log para exportar'); return; }
   
-  let csv = 'Data Log,Código,Descrição,Ordem,QTD,Series,Data Produção,Hora Produção,Resp Produção,Data Inspeção,Hora Inspeção,Resp Inspeção,Prefixo\n';
-  historicoOrdens.forEach(o=>{
-    const seriesStr = (o.series||[]).join(';');
-    const linha = [
-      `"${(o.timestamp||'').replace(/"/g,'""')}"`,
-      `"${(o.codigo||'').replace(/"/g,'""')}"`,
-      `"${(o.descricao||'').replace(/"/g,'""')}"`,
-      `"${(o.ordem||'').replace(/"/g,'""')}"`,
-      `"${o.qtd||''}"`,
-      `"${seriesStr.replace(/"/g,'""')}"`,
-      `"${o.data_producao||''}"`,
-      `"${o.hora_producao||''}"`,
-      `"${(o.resp_producao||'').replace(/"/g,'""')}"`,
-      `"${o.data_inspecao||''}"`,
-      `"${o.hora_inspecao||''}"`,
-      `"${(o.resp_inspecao||'').replace(/"/g,'""')}"`,
-      `"${(o.prefixo_serie||'').replace(/"/g,'""')}"`
-    ].join(',');
-    csv += linha + '\n';
+  let txt = 'LOG DE PRODUCAO - GERADO EM '+new Date().toLocaleString('pt-BR')+'\n';
+  txt += '================================================================================\n\n';
+  historicoOrdens.forEach((o, idx)=>{
+    txt += `--- REGISTRO ${idx+1} - ${o.timestamp} ---\n`;
+    txt += `Codigo Produto: ${o.codigo}\n`;
+    txt += `Descricao: ${o.descricao}\n`;
+    txt += `Numero Ordem: ${o.ordem}\n`;
+    txt += `QTD: ${o.qtd}\n`;
+    txt += `Numeros de Serie (${(o.series||[]).length}): ${(o.series||[]).join(', ') || 'N/A'}\n`;
+    txt += `Data Producao: ${o.data_producao} ${o.hora_producao}\n`;
+    txt += `Responsavel Producao: ${o.resp_producao}\n`;
+    txt += `Data Inspecao: ${o.data_inspecao} ${o.hora_inspecao}\n`;
+    txt += `Responsavel Inspecao: ${o.resp_inspecao}\n`;
+    txt += `Prefixo Serie: ${o.prefixo_serie||''}\n`;
+    txt += '\n';
   });
   
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const blob = new Blob([txt], {type:'text/plain;charset=utf-8;'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'log_producao_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.download = 'log_producao_'+new Date().toISOString().slice(0,10)+'.txt';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
