@@ -572,7 +572,6 @@ function gerarLogCompleto(){
     logText += `Responsável Produção: ${o.resp_producao}\n`;
     logText += `Data Inspeção: ${o.data_inspecao} ${o.hora_inspecao}\n`;
     logText += `Responsável Inspeção: ${o.resp_inspecao}\n`;
-    logText += `Prefixo Série: ${o.prefixo_serie||''}\n`;
     logText += '\n';
   });
   
@@ -583,7 +582,7 @@ function exportarLogCSV(){
   if(historicoOrdens.length===0){ alert('Nenhum log para exportar'); return; }
   
   // Cabeçalhos da planilha
-  const headers = ['Data Log','Código','Descrição','Ordem','QTD','Séries','Data Produção','Hora Produção','Resp Produção','Data Inspeção','Hora Inspeção','Resp Inspeção','Prefixo'];
+  const headers = ['Data Log','Código','Descrição','Ordem','QTD','Séries','Data Produção','Hora Produção','Resp Produção','Data Inspeção','Hora Inspeção','Resp Inspeção'];
   
   // Monta dados
   const dados = historicoOrdens.map(o=>[
@@ -598,8 +597,7 @@ function exportarLogCSV(){
     o.resp_producao||'',
     o.data_inspecao||'',
     o.hora_inspecao||'',
-    o.resp_inspecao||'',
-    o.prefixo_serie||''
+    o.resp_inspecao||''
   ]);
   
   // Cria planilha
@@ -608,7 +606,7 @@ function exportarLogCSV(){
   
   // Ajusta largura das colunas
   ws['!cols'] = [
-    {wch:20},{wch:15},{wch:35},{wch:15},{wch:6},{wch:30},{wch:13},{wch:10},{wch:18},{wch:13},{wch:10},{wch:18},{wch:10}
+    {wch:20},{wch:15},{wch:35},{wch:15},{wch:6},{wch:30},{wch:13},{wch:10},{wch:18},{wch:13},{wch:10},{wch:18}
   ];
   
   const wb = XLSX.utils.book_new();
@@ -1163,4 +1161,3 @@ window.onload=()=>{
 };
 </script>
 </body>
-</html>
