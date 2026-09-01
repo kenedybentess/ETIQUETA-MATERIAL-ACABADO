@@ -231,6 +231,15 @@ body{background:#f4f6f9;display:flex;height:100vh;overflow:hidden}
       <div class="form-group"><label>Largura mm</label><input type="number" id="inputWidth" value="100" onchange="atualizarDimensoes()"></div>
       <div class="form-group"><label>Altura mm</label><input type="number" id="inputHeight" value="70" onchange="atualizarDimensoes()"></div>
     </div>
+    <h3 style="margin-top:8px">↔️ Margens (mm)</h3>
+    <div class="row-inputs">
+      <div class="form-group"><label>Esquerda</label><input type="number" id="inputMarginLeft" value="2" min="0" step="0.5" onchange="atualizarDimensoes()"></div>
+      <div class="form-group"><label>Direita</label><input type="number" id="inputMarginRight" value="2" min="0" step="0.5" onchange="atualizarDimensoes()"></div>
+    </div>
+    <div class="row-inputs">
+      <div class="form-group"><label>Topo</label><input type="number" id="inputMarginTop" value="2" min="0" step="0.5" onchange="atualizarDimensoes()"></div>
+      <div class="form-group"><label>Base</label><input type="number" id="inputMarginBottom" value="2" min="0" step="0.5" onchange="atualizarDimensoes()"></div>
+    </div>
 
     <h2>🧩 Elementos - Arraste na Etiqueta</h2>
     <div id="listaElementos"></div>
@@ -847,10 +856,19 @@ function getValorElemento(el){
 function renderizarTudo(){
   const w=parseFloat(document.getElementById('inputWidth').value)||100;
   const h=parseFloat(document.getElementById('inputHeight').value)||70;
+  const ml=parseFloat(document.getElementById('inputMarginLeft')?.value)||0;
+  const mr=parseFloat(document.getElementById('inputMarginRight')?.value)||0;
+  const mt=parseFloat(document.getElementById('inputMarginTop')?.value)||0;
+  const mb=parseFloat(document.getElementById('inputMarginBottom')?.value)||0;
   const etiqueta=document.getElementById('etiqueta');
   const pxPerMm=3.8;
   etiqueta.style.width=(w*pxPerMm)+'px';
   etiqueta.style.height=(h*pxPerMm)+'px';
+  etiqueta.style.paddingLeft=(ml*pxPerMm)+'px';
+  etiqueta.style.paddingRight=(mr*pxPerMm)+'px';
+  etiqueta.style.paddingTop=(mt*pxPerMm)+'px';
+  etiqueta.style.paddingBottom=(mb*pxPerMm)+'px';
+  etiqueta.style.boxSizing='border-box';
   etiqueta.innerHTML=elementos.map(el=>{
     const val=getValorElemento(el);
     let inner='';
@@ -887,7 +905,7 @@ function initInteract(){
   });
 }
 function autoSalvar(){
-  const estado={elementos,idContador,dadosEtiqueta,largura:document.getElementById('inputWidth').value,altura:document.getElementById('inputHeight').value,versao:'6.0',data:new Date().toISOString()};
+  const estado={elementos,idContador,dadosEtiqueta,largura:document.getElementById('inputWidth').value,altura:document.getElementById('inputHeight').value,margens:{left:document.getElementById('inputMarginLeft')?.value||'2',right:document.getElementById('inputMarginRight')?.value||'2',top:document.getElementById('inputMarginTop')?.value||'2',bottom:document.getElementById('inputMarginBottom')?.value||'2'},versao:'6.1',data:new Date().toISOString()};
   localStorage.setItem(LAYOUT_KEY, JSON.stringify(estado));
   const s=document.getElementById('statusSave'); if(s) s.innerText='Salvo '+new Date().toLocaleTimeString('pt-BR');
 }
@@ -896,7 +914,7 @@ function salvarTudo(){ autoSalvar(); const b=document.getElementById('btnSalvar'
 
 function exportarConfig(){
   try{
-    const estado={elementos,idContador,dadosEtiqueta,largura:document.getElementById('inputWidth').value,altura:document.getElementById('inputHeight').value,versao:'6.0',data:new Date().toISOString()};
+    const estado={elementos,idContador,dadosEtiqueta,largura:document.getElementById('inputWidth').value,altura:document.getElementById('inputHeight').value,margens:{left:document.getElementById('inputMarginLeft')?.value||'2',right:document.getElementById('inputMarginRight')?.value||'2',top:document.getElementById('inputMarginTop')?.value||'2',bottom:document.getElementById('inputMarginBottom')?.value||'2'},versao:'6.1',data:new Date().toISOString()};
     const blob=new Blob([JSON.stringify(estado,null,2)],{type:'application/json'});
     const a=document.createElement('a');
     a.href=URL.createObjectURL(blob);
@@ -1138,6 +1156,12 @@ window.onload=()=>{
       }
         if(est.largura) document.getElementById('inputWidth').value=est.largura;
         if(est.altura) document.getElementById('inputHeight').value=est.altura;
+        if(est.margens){
+          if(est.margens.left) document.getElementById('inputMarginLeft').value=est.margens.left;
+          if(est.margens.right) document.getElementById('inputMarginRight').value=est.margens.right;
+          if(est.margens.top) document.getElementById('inputMarginTop').value=est.margens.top;
+          if(est.margens.bottom) document.getElementById('inputMarginBottom').value=est.margens.bottom;
+        }
       }
     }
   }catch(e){}
@@ -1161,3 +1185,4 @@ window.onload=()=>{
 };
 </script>
 </body>
+</html>
