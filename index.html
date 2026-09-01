@@ -126,7 +126,7 @@ body{background:#f4f6f9;display:flex;height:100vh;overflow:hidden}
     </div>
 
     <div class="card-prod" style="border-color:#0d6efd;background:linear-gradient(135deg,#e7f1ff,#ffffff)">
-      <h3>🔢 Números de Série Especificados (AMOSTRAGEM) <span style="font-size:9px;color:#0d6efd;font-weight:400">(QTD pode ser diferente - amostragem)</span> <span id="badgeSeries" class="badge" style="background:#0d6efd;color:white">0 / 0</span></h3>
+      <h3>🔢 Números de Série Especificados <span id="badgeSeries" class="badge" style="background:#0d6efd;color:white">0 / 0</span></h3>
       <div class="form-group">
         <label>Digite os números de série (um por linha, ou separados por vírgula/espaço)</label>
         <textarea id="prod_series_input" rows="4" placeholder="Ex:\nSN20240001\nSN20240002\nSN20240003\nOu: SN001, SN002, SN003" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:5px;font-size:12px;font-family:monospace;resize:vertical" oninput="onSeriesTextChange()"></textarea>
@@ -487,9 +487,9 @@ function atualizarSeriesUI(){
   const status = document.getElementById('seriesStatus');
   if(status){
     if(count===0) status.innerHTML = '<span style="color:#999">- vazio</span>';
-    else if(count < qtd) status.innerHTML = '<span style="color:#0d6efd">ℹ️ Amostragem: '+count+' de '+qtd+' (diferença permitida - amostragem)</span>';
-    else if(count===qtd) status.innerHTML = '<span style="color:#198754">✅ QTD = Amostragem OK</span>';
-    else status.innerHTML = '<span style="color:#0d6efd">ℹ️ Amostragem: '+count+' - QTD total: '+qtd+'</span>';
+    else if(count < qtd) status.innerHTML = '<span style="color:#fd7e14">⚠️ faltam '+(qtd-count)+'</span>';
+    else if(count===qtd) status.innerHTML = '<span style="color:#198754">✅ OK</span>';
+    else status.innerHTML = '<span style="color:#dc3545">⚠️ sobrando '+(count-qtd)+'</span>';
   }
   
   const chipsDiv = document.getElementById('listaSeriesChips');
@@ -553,88 +553,30 @@ function gerarLogCompleto(){
   const logDiv = document.getElementById('logCompleto');
   if(!logDiv) return;
   if(historicoOrdens.length===0){
-    logDiv.innerHTML = '<div style="color:#888;padding:10px">Nenhum log ainda. Salve uma ordem primeiro.</div>';
+    logDiv.innerText = 'Nenhum log ainda. Salve uma ordem primeiro.';
     return;
   }
   
-  // Gera HTML visual com séries destacadas
-  let htmlLog = '';
+  let logText = 'LOG DE PRODUÇÃO - GERADO EM '+new Date().toLocaleString('pt-BR')+'\n';
+  logText += '================================================================================\n\n';
+  
   historicoOrdens.forEach((o, idx)=>{
-    const qtd = parseInt(o.qtd)||0;
-    const seriesCount = (o.series||[]).length;
-    const diff = qtd - seriesCount;
-    const amostragemInfo = diff!==0 ? `<span style="background:#0d6efd;color:white;padding:2px 6px;border-radius:10px;font-size:9px">AMOSTRAGEM: ${seriesCount} de ${qtd}</span>` : `<span style="background:#198754;color:white;padding:2px 6px;border-radius:10px;font-size:9px">QTD = SÉRIES</span>`;
-    
-    let seriesHtml = '';
-    if((o.series||[]).length>0){
-      seriesHtml = `<div style="background:#e7f1ff;border:1px solid #0d6efd;border-radius:6px;padding:6px;margin-top:6px">
-        <div style="font-weight:800;font-size:10px;color:#0d6efd;margin-bottom:4px">🔢 NÚMEROS DE SÉRIE ESPECIFICADOS (${seriesCount}):</div>
-        <div style="display:flex;flex-wrap:wrap;gap:4px">` + 
-        o.series.map(s=>`<span style="background:white;border:1px solid #0d6efd;border-radius:10px;padding:2px 8px;font-family:monospace;font-size:10px;font-weight:700">${s}</span>`).join('') +
-        `</div></div>`;
-    }else{
-      seriesHtml = `<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:6px;margin-top:6px;font-size:10px;color:#856404">⚠️ Nenhum número de série informado para esta ordem</div>`;
-    }
-    
-    htmlLog += `
-    <div style="border:2px solid #dee2e6;border-radius:8px;padding:10px;margin-bottom:10px;background:white">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <b style="font-size:11px">#${idx+1} - ${o.ordem} - ${o.codigo}</b>
-        <span style="font-size:9px;color:#666">${o.timestamp}</span>
-      </div>
-      <div style="font-size:10px;line-height:1.5;color:#333">
-        <div><b>Produto:</b> ${o.descricao}</div>
-        <div><b>QTD Total Produzida:</b> ${o.qtd} ${amostragemInfo}</div>
-        <div><b>Produção:</b> ${o.data_producao} ${o.hora_producao} - <b>${o.resp_producao||'-'}</b></div>
-        <div><b>Inspeção:</b> ${o.data_inspecao} ${o.hora_inspecao} - <b>${o.resp_inspecao||'-'}</b></div>
-      </div>
-      ${seriesHtml}
-    </div>`;
+    logText += `--- REGISTRO ${idx+1} - ${o.timestamp} ---\n`;
+    logText += `Código Produto: ${o.codigo}\n`;
+    logText += `Descrição: ${o.descricao}\n`;
+    logText += `Número Ordem: ${o.ordem}\n`;
+    logText += `QTD: ${o.qtd}\n`;
+    logText += `Números de Série (${(o.series||[]).length}): ${(o.series||[]).join(', ') || 'N/A'}\n`;
+    logText += `Data Produção: ${o.data_producao} ${o.hora_producao}\n`;
+    logText += `Responsável Produção: ${o.resp_producao}\n`;
+    logText += `Data Inspeção: ${o.data_inspecao} ${o.hora_inspecao}\n`;
+    logText += `Responsável Inspeção: ${o.resp_inspecao}\n`;
+    logText += `Prefixo Série: ${o.prefixo_serie||''}\n`;
+    logText += '\n';
   });
   
-  logDiv.innerHTML = htmlLog;
+  logDiv.innerText = logText;
 }
-
-function gerarLogTextoSimples(){
-  // Para exportação ou impressão
-  let logText = 'LOG DE PRODUÇÃO - GERADO EM '+new Date().toLocaleString('pt-BR')+'
-';
-  logText += '================================================================================
-
-';
-  historicoOrdens.forEach((o, idx)=>{
-    logText += `--- REGISTRO ${idx+1} - ${o.timestamp} ---
-`;
-    logText += `Código Produto: ${o.codigo}
-`;
-    logText += `Descrição: ${o.descricao}
-`;
-    logText += `Número Ordem: ${o.ordem}
-`;
-    logText += `QTD Total Produzida: ${o.qtd}
-`;
-    logText += `QTD Amostragem (Séries): ${(o.series||[]).length}
-`;
-    logText += `Números de Série Especificados:
-`;
-    (o.series||[]).forEach((s,i)=>{ logText += `  ${i+1}. ${s}
-`; });
-    if((o.series||[]).length===0) logText += `  Nenhum
-`;
-    logText += `Data Produção: ${o.data_producao} ${o.hora_producao}
-`;
-    logText += `Responsável Produção: ${o.resp_producao}
-`;
-    logText += `Data Inspeção: ${o.data_inspecao} ${o.hora_inspecao}
-`;
-    logText += `Responsável Inspeção: ${o.resp_inspecao}
-`;
-    logText += '
-';
-  });
-  return logText;
-}
-
 
 function exportarLogCSV(){
   if(historicoOrdens.length===0){ alert('Nenhum log para exportar'); return; }
@@ -693,9 +635,10 @@ function limparLog(){
 
 function salvarOrdemComSeries(){
   if(!dadosEtiqueta.codigo || !dadosEtiqueta.ordem){ alert('Preencha Código e Número da Ordem'); return; }
-  // QTD pode ser diferente de séries porque é amostragem - não bloqueia
   if((dadosEtiqueta.series||[]).length===0){
-    if(!confirm('Nenhum número de série informado. Salvar mesmo assim? (amostragem vazia)')) return;
+    if(!confirm('Nenhum número de série informado. Salvar mesmo assim?')) return;
+  }else if(dadosEtiqueta.series.length != parseInt(dadosEtiqueta.qtd||0)){
+    if(!confirm(`QTD é ${dadosEtiqueta.qtd} mas você informou ${dadosEtiqueta.series.length} séries. Salvar mesmo assim?`)) return;
   }
   
   const ordem = {
@@ -745,21 +688,8 @@ function salvarOrdem(){
 function renderizarOrdens(){
   const div=document.getElementById('listaOrdens'); if(!div)return;
   if(historicoOrdens.length===0){ div.innerHTML='<div style="font-size:10px;color:#888;padding:6px">Nenhuma ordem salva</div>'; return; }
-  div.innerHTML=historicoOrdens.slice(0,10).map(o=>{
-    const seriesCount = (o.series||[]).length;
-    const qtd = parseInt(o.qtd)||0;
-    const badgeAmost = seriesCount!==qtd ? `<span style="background:#0d6efd;color:white;padding:1px 5px;border-radius:8px;font-size:8px">AMOSTRA ${seriesCount}/${qtd}</span>` : `<span style="background:#198754;color:white;padding:1px 5px;border-radius:8px;font-size:8px">${seriesCount} séries</span>`;
-    const seriesPreview = (o.series||[]).slice(0,3).join(', ') + (seriesCount>3 ? ' ...' : '');
-    return `<div style="border:1px solid #ddd;border-radius:4px;padding:5px;margin-bottom:4px;font-size:10px"><b>${o.ordem}</b> - ${o.codigo} - QTD:${o.qtd} ${badgeAmost} <br><span style="color:#666">${o.timestamp} - Prod:${o.resp_producao||'-'} Insp:${o.resp_inspecao||'-'}</span><br><div style="font-size:9px;color:#0d6efd;font-family:monospace;margin-top:2px">Séries: ${seriesPreview||'nenhuma'}</div><button style="font-size:9px;padding:2px 6px;margin-top:2px" onclick="carregarOrdem('${o.id}')">Carregar</button> <button style="font-size:9px;padding:2px 6px" onclick="verSeriesLog('${o.id}')">Ver Séries</button></div>`;
-  }).join('');
+  div.innerHTML=historicoOrdens.slice(0,10).map(o=>`<div style="border:1px solid #ddd;border-radius:4px;padding:5px;margin-bottom:4px;font-size:10px"><b>${o.ordem}</b> - ${o.codigo} - QTD:${o.qtd} <br><span style="color:#666">${o.timestamp} - Prod:${o.resp_producao||'-'} Insp:${o.resp_inspecao||'-'}</span><br><button style="font-size:9px;padding:2px 6px;margin-top:2px" onclick="carregarOrdem('${o.id}')">Carregar</button></div>`).join('');
 }
-
-function verSeriesLog(id){
-  const o=historicoOrdens.find(x=>x.id===id);
-  if(!o) return;
-  alert(`Números de Série da Ordem ${o.ordem}:\n\n${(o.series||[]).join('\n') || 'Nenhum'}\n\nTotal: ${(o.series||[]).length} / QTD ${o.qtd} (amostragem)`);
-}
-
 function carregarOrdem(id){
   const o=historicoOrdens.find(x=>x.id===id); if(!o)return;
   dadosEtiqueta={...o};
